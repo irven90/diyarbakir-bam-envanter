@@ -2400,9 +2400,6 @@ def dashboard():
         </div>
         <button type="button" onclick="window.location.reload()" class="btn btn-sm btn-outline-warning ms-auto fw-bold"><i class="fa fa-rotate-right me-1"></i> Sayfayı Yenile</button>
       </div>
-      <div class="alert alert-info py-2 mb-0 mt-2" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3) !important; color: #a5b4fc;">
-        <i class="fa fa-network-wired me-2"></i> Diğer bilgisayarlar ve telefonlardan erişim adresi: <strong>http://{local_ip}:5000</strong>
-      </div>
     </div>
 
     <div class="row g-3">
