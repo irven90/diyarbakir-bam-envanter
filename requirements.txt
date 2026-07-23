@@ -1,7 +1,7 @@
-Flask==3.0.3
-Flask-SQLAlchemy==3.1.1
-gunicorn==22.0.0
-openpyxl==3.1.2
-reportlab==4.1.0
-Pillow==10.3.0
-psycopg2-binary==2.9.9
+Flask
+Flask-SQLAlchemy
+gunicorn
+openpyxl
+reportlab
+Pillow
+psycopg2-binary
