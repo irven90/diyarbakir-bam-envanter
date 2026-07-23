@@ -4817,15 +4817,21 @@ def admin_export_depo_pdf():
         return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
 
 
+with app.app_context():
+    try:
+        init_db_once()
+    except Exception as e:
+        print("init_db_once error:", e)
+
 # =========================================================
 # MAIN
 # =========================================================
 if __name__ == "__main__":
-    init_db_once()
     local_ip = get_local_ip()
     print("\n" + "="*70)
     print(" ZİMMET SİSTEMİ SUNUCUSU AKTİF")
     print(f" Yerel bilgisayardan erişim: http://127.0.0.1:5000")
     print(f" Ağdaki diğer cihazlar için: http://{local_ip}:5000")
     print("="*70 + "\n")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
