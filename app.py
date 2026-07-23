@@ -3426,6 +3426,8 @@ def zimmet_page():
     function submitManual(which){
       if(which === "z"){
         document.getElementById("z_manual_json").value = JSON.stringify(collectManual("z_rows"));
+      }else if(which === "z_daire"){
+        document.getElementById("z_daire_manual_json").value = JSON.stringify(collectManual("z_daire_rows"));
       }else{
         document.getElementById("t_manual_json").value = JSON.stringify(collectManual("t_rows"));
       }
@@ -3788,6 +3790,11 @@ def pdf_teslim():
         )
 
         sicil = session.get("sicil") or "unknown"
+        temp_filename = f"temp_{sicil}_teslim.pdf"
+        temp_path = os.path.join(APP_DIR, temp_filename)
+        with open(temp_path, "wb") as f:
+            f.write(pdf_bytes)
+
         return redirect(url_for("view_pdf_page", type="teslim"))
 
     except Exception as e:
