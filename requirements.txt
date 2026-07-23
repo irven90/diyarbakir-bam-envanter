@@ -5,3 +5,4 @@ openpyxl
 reportlab
 Pillow
 psycopg2-binary
+fpdf2
