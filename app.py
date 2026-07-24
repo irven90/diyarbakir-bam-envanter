@@ -1149,10 +1149,6 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
     font, unicode_ok = pdf_font_setup(p)
     txt = lambda x: safe_text(x, unicode_ok)
 
-    if os.path.exists(LOGO_PATH):
-        p.image(LOGO_PATH, x=15, y=10, w=22, h=22)
-        p.image(LOGO_PATH, x=173, y=10, w=22, h=22)
-
     p.set_xy(10, 11)
     p.set_text_color(15, 23, 42)
     p.set_font(font, "B", 12)
@@ -1614,34 +1610,61 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 16px;
-  border-radius: 12px;
-  color: var(--muted);
+  padding: 10px 14px;
+  border-radius: 14px;
+  color: var(--text);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13.5px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 2px;
+  backdrop-filter: blur(10px);
 }
 .navlink:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--heading) !important;
-  transform: translateX(4px);
-}
-.navlink.active {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%) !important;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff !important;
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35) !important;
-  font-weight: 800;
+  transform: translateX(4px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
-.navlink i {
-  font-size: 16px;
-  width: 22px;
-  text-align: center;
-  transition: transform 0.2s ease;
+.icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
 }
-.navlink:hover i {
-  transform: scale(1.15);
+.navlink:hover .icon-box {
+  transform: scale(1.12);
+}
+
+.icon-dash { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); }
+.icon-env  { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35); }
+.icon-zim  { background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); }
+.icon-dai  { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); }
+.icon-dep  { background: linear-gradient(135deg, #06b6d4 0%, #0f766e 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35); }
+.icon-gec  { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35); }
+.icon-set  { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35); }
+.icon-out  { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35); }
+
+.navlink.active.nav-item-dash { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%) !important; border-color: rgba(99,102,241,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important; }
+.navlink.active.nav-item-env  { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important; border-color: rgba(59,130,246,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45) !important; }
+.navlink.active.nav-item-zim  { background: linear-gradient(135deg, #10b981 0%, #065f46 100%) !important; border-color: rgba(16,185,129,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important; }
+.navlink.active.nav-item-dai  { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%) !important; border-color: rgba(245,158,11,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45) !important; }
+.navlink.active.nav-item-dep  { background: linear-gradient(135deg, #06b6d4 0%, #115e59 100%) !important; border-color: rgba(6,182,212,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45) !important; }
+.navlink.active.nav-item-gec  { background: linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%) !important; border-color: rgba(139,92,246,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45) !important; }
+.navlink.active.nav-item-set  { background: linear-gradient(135deg, #ec4899 0%, #9d174d 100%) !important; border-color: rgba(236,72,153,0.5) !important; color: #ffffff !important; box-shadow: 0 6px 20px rgba(236, 72, 153, 0.45) !important; }
+
+.navlink.active .icon-box {
+  background: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
 }
 
 /* --- Content --- */
@@ -1957,21 +1980,47 @@ details summary {
       <small style="color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Envanter Sistemi</small>
     </div>
   </div>
-  <div class="d-flex flex-column gap-1">
-    <a class="navlink" href="/dashboard" id="s_dash"><i class="fa-solid fa-chart-pie"></i> Yönetim</a>
-    <a class="navlink" href="/envanter" id="s_env"><i class="fa-solid fa-boxes-stacked"></i> Envanter</a>
-    <a class="navlink" href="/zimmet" id="s_zim"><i class="fa-solid fa-file-contract"></i> Zimmet / Teslim</a>
-    <a class="navlink" href="/daire_incele" id="s_dai"><i class="fa-solid fa-building-user"></i> Daire İnceleme</a>
-    <a class="navlink" href="/depo" id="s_dep"><i class="fa-solid fa-warehouse"></i> Depo</a>
-    <a class="navlink" href="/gecmis" id="s_gec"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş</a>
-    {% if is_admin %}<a class="navlink" href="/ayarlar" id="s_set"><i class="fa-solid fa-sliders"></i> Ayarlar</a>{% endif %}
+  <div class="d-flex flex-column gap-2">
+    <a class="navlink nav-item-dash" href="/dashboard" id="s_dash">
+      <span class="icon-box icon-dash"><i class="fa-solid fa-chart-pie"></i></span>
+      <span>Yönetim</span>
+    </a>
+    <a class="navlink nav-item-env" href="/envanter" id="s_env">
+      <span class="icon-box icon-env"><i class="fa-solid fa-boxes-stacked"></i></span>
+      <span>Envanter</span>
+    </a>
+    <a class="navlink nav-item-zim" href="/zimmet" id="s_zim">
+      <span class="icon-box icon-zim"><i class="fa-solid fa-file-contract"></i></span>
+      <span>Zimmet / Teslim</span>
+    </a>
+    <a class="navlink nav-item-dai" href="/daire_incele" id="s_dai">
+      <span class="icon-box icon-dai"><i class="fa-solid fa-building-user"></i></span>
+      <span>Daire İnceleme</span>
+    </a>
+    <a class="navlink nav-item-dep" href="/depo" id="s_dep">
+      <span class="icon-box icon-dep"><i class="fa-solid fa-warehouse"></i></span>
+      <span>Depo</span>
+    </a>
+    <a class="navlink nav-item-gec" href="/gecmis" id="s_gec">
+      <span class="icon-box icon-gec"><i class="fa-solid fa-clock-rotate-left"></i></span>
+      <span>Geçmiş</span>
+    </a>
+    {% if is_admin %}
+    <a class="navlink nav-item-set" href="/ayarlar" id="s_set">
+      <span class="icon-box icon-set"><i class="fa-solid fa-sliders"></i></span>
+      <span>Ayarlar</span>
+    </a>
+    {% endif %}
     {% if (request.path == '/dashboard' or request.path == '/') and critical_count and critical_count > 0 %}
-    <button type="button" onclick="onCriticalBellClick()" class="btn btn-sm w-100 mt-2 fw-bold text-start d-flex align-items-center justify-content-between py-2 px-3" style="border-radius: 12px; font-size: 12.5px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35) !important; color: #fca5a5; backdrop-filter: blur(8px);" data-bs-toggle="modal" data-bs-target="#criticalStockModal">
+    <button type="button" onclick="onCriticalBellClick()" class="btn btn-sm w-100 mt-1 fw-bold text-start d-flex align-items-center justify-content-between py-2 px-3" style="border-radius: 14px; font-size: 12.5px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4) !important; color: #fca5a5; backdrop-filter: blur(10px);" data-bs-toggle="modal" data-bs-target="#criticalStockModal">
       <span><span id="critical_bell_dot" class="pulse-red-dot me-2"></span>Kritik Stok Uyarısı</span>
-      <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 11px;">{{ critical_count }}</span>
+      <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 11px; box-shadow: 0 0 10px rgba(239,68,68,0.5);">{{ critical_count }}</span>
     </button>
     {% endif %}
-    <a class="navlink mt-2" href="/logout" style="color: #fca5a5;"><i class="fa-solid fa-right-from-bracket" style="color: #fca5a5;"></i> Çıkış</a>
+    <a class="navlink nav-item-out mt-1" href="/logout">
+      <span class="icon-box icon-out"><i class="fa-solid fa-right-from-bracket"></i></span>
+      <span>Çıkış</span>
+    </a>
   </div>
   <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; font-weight: 700; opacity: 0.8;">
     By Murat İRVEN (187665)
