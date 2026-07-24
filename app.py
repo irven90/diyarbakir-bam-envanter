@@ -2153,13 +2153,6 @@ document.addEventListener("click", function(e) {
   <a class="bottom-nav-link" href="/gecmis" id="b_gec"><i class="fa fa-clock-rotate-left"></i><span>Geçmiş</span></a>
 </div>
 
-<!-- Floating Theme Switcher Pill -->
-<div class="theme-switcher-pill">
-  <button type="button" onclick="setAppTheme('dark')" class="theme-btn" id="tb_dark" title="Koyu Tema"><i class="fa-solid fa-moon"></i> Koyu</button>
-  <button type="button" onclick="setAppTheme('light')" class="theme-btn" id="tb_light" title="Aydınlık Tema"><i class="fa-solid fa-sun"></i> Beyaz</button>
-  <button type="button" onclick="setAppTheme('navy')" class="theme-btn" id="tb_navy" title="2026 Sunset Glass Tema"><i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> 2026 Sunset Glass</button>
-</div>
-
 <!-- Kritik Stok Pop-up Modal -->
 {% if critical_count and critical_count > 0 %}
 <div class="modal fade" id="criticalStockModal" tabindex="-1" aria-hidden="true">
@@ -4845,7 +4838,18 @@ def ayarlar_page():
     content = f"""
     <div class="card p-4 mb-3">
       <h3>Ayarlar ve Veri Yönetimi</h3>
-      <div class="label">Kullanıcıları yönetebilir, verilerinizi yedekleyebilir veya geçmişe tek tıkla geri dönebilirsiniz.</div>
+      <div class="label">Kullanıcıları yönetebilir, arayüz temasını değiştirebilir, verilerinizi yedekleyebilir veya geçmişe tek tıkla geri dönebilirsiniz.</div>
+    </div>
+
+    <!-- Arayüz Görünümü & Tema Seçimi Kartı -->
+    <div class="card p-4 mb-3">
+      <h6><i class="fa-solid fa-palette text-primary me-2"></i>Arayüz Görünümü & Tema Seçimi</h6>
+      <div class="label mb-3">Sistem renk temasını aşağıdaki seçeneklerden değiştirebilirsiniz. Tercihiniz tarayıcınıza otomatik kaydedilir.</div>
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <button type="button" onclick="setAppTheme('dark')" class="btn btn-outline-light text-white px-3 py-2 fw-bold" id="tb_dark" style="border-radius: 12px; background: rgba(15, 23, 42, 0.6);"><i class="fa-solid fa-moon me-2"></i> Koyu Tema</button>
+        <button type="button" onclick="setAppTheme('light')" class="btn btn-outline-secondary px-3 py-2 fw-bold" id="tb_light" style="border-radius: 12px; background: #ffffff; color: #0f172a;"><i class="fa-solid fa-sun text-warning me-2"></i> Beyaz (Aydınlık) Tema</button>
+        <button type="button" onclick="setAppTheme('navy')" class="btn btn-outline-warning text-warning px-3 py-2 fw-bold" id="tb_navy" style="border-radius: 12px; background: rgba(30, 41, 59, 0.8);"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> 2026 Sunset Glass Tema</button>
+      </div>
     </div>
 
     <!-- Kullanıcı Yönetimi Paneli -->
