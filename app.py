@@ -1296,6 +1296,32 @@ def purge_dirty_concat_records():
         db.session.rollback()
 
 
+def get_category_badge(cat: str) -> str:
+    c = (cat or "").strip()
+    if c == "Kasa":
+        return '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="fa-solid fa-desktop me-1"></i>Kasa</span>'
+    elif c == "Monitör":
+        return '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><i class="fa-solid fa-tv me-1"></i>Monitör</span>'
+    elif c == "Yazıcı":
+        return '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="fa-solid fa-print me-1"></i>Yazıcı</span>'
+    elif c == "Tarayıcı":
+        return '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fa-solid fa-print me-1"></i>Tarayıcı</span>'
+    return f'<span class="badge bg-secondary px-2 py-1">{c}</span>'
+
+
+def get_status_badge(st: str) -> str:
+    s = (st or "").strip()
+    if s == "Depoda":
+        return '<span class="badge badge-status-depo px-2.5 py-1">Depoda</span>'
+    elif s == "Zimmetli":
+        return '<span class="badge badge-status-zimmet px-2.5 py-1">Zimmetli</span>'
+    elif s == "Arızalı / Bakımda":
+        return '<span class="badge badge-status-ariza px-2.5 py-1">Arızalı / Bakımda</span>'
+    elif s == "Hek / Hurda":
+        return '<span class="badge badge-status-hurda px-2.5 py-1">Hek / Hurda</span>'
+    return f'<span class="badge bg-secondary px-2.5 py-1">{s}</span>'
+
+
 def get_all_personnel_list():
     res = {}
     try:
@@ -1668,6 +1694,32 @@ h1, h2, h3, h4, h5, h6 {
   color: #ffffff !important;
 }
 
+html[data-theme="light"] .navlink {
+  color: #334155 !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .navlink:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* --- Table Micro-Animation & Glow Badges --- */
+.table tbody tr {
+  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+.table tbody tr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  background: rgba(99, 102, 241, 0.05) !important;
+}
+
+.badge-status-depo { background: rgba(16, 185, 129, 0.15) !important; color: #10b981 !important; border: 1px solid rgba(16, 185, 129, 0.35) !important; box-shadow: 0 0 10px rgba(16, 185, 129, 0.25); font-weight: 700; }
+.badge-status-zimmet { background: rgba(59, 130, 246, 0.15) !important; color: #3b82f6 !important; border: 1px solid rgba(59, 130, 246, 0.35) !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); font-weight: 700; }
+.badge-status-ariza { background: rgba(245, 158, 11, 0.15) !important; color: #f59e0b !important; border: 1px solid rgba(245, 158, 11, 0.35) !important; box-shadow: 0 0 10px rgba(245, 158, 11, 0.25); font-weight: 700; }
+.badge-status-hurda { background: rgba(239, 68, 68, 0.15) !important; color: #ef4444 !important; border: 1px solid rgba(239, 68, 68, 0.35) !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.25); font-weight: 700; }
+
 /* --- Content --- */
 .content {
   margin-left: 260px;
@@ -2029,9 +2081,57 @@ details summary {
 </div>
 
 <div class="content">
+  <!-- Canlı Hızlı Arama Üst Çubuğu (Seçenek 5) -->
+  <div class="card p-2 px-3 mb-3 d-flex flex-row align-items-center justify-content-between position-relative shadow-sm" style="border-radius: 16px; background: var(--card); border: 1px solid var(--border);">
+    <div class="d-flex align-items-center gap-2 flex-grow-1 me-3 position-relative">
+      <i class="fa-solid fa-magnifying-glass text-primary fs-5"></i>
+      <input type="text" id="liveHeaderSearchInput" class="form-control border-0 bg-transparent shadow-none fw-bold" placeholder="Sistemde hızlı seri no, personel veya daire ara..." style="color: var(--heading); font-size: 14px;" onkeyup="onLiveSearchKeyup(this.value)">
+      <div id="liveSearchResultsDropdown" class="position-absolute shadow-lg rounded-3 p-2" style="display:none; top: 100%; left: 0; right: 0; z-index: 9999; background: var(--card); border: 1px solid var(--primary); max-height: 320px; overflow-y: auto; backdrop-filter: blur(16px);"></div>
+    </div>
+    <div class="d-flex align-items-center gap-2 d-none d-md-flex">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1" style="font-size: 11px;"><i class="fa-solid fa-shield-halved me-1"></i>Diyarbakır BAM</span>
+    </div>
+  </div>
+
   {% if message %}<div class="alert alert-warning border-0 rounded-3" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3) !important; color: #fbbf24;">{{ message }}</div>{% endif %}
   {{ content|safe }}
 </div>
+
+<script>
+function onLiveSearchKeyup(val) {
+  const dd = document.getElementById("liveSearchResultsDropdown");
+  if (!dd) return;
+  const q = (val || "").trim().toLowerCase();
+  if (q.length < 2) {
+    dd.style.display = "none";
+    return;
+  }
+  let html = "";
+  const rows = document.querySelectorAll(".table tbody tr");
+  let count = 0;
+  rows.forEach(tr => {
+    const text = tr.innerText.toLowerCase();
+    if (text.includes(q) && count < 6) {
+      count++;
+      html += '<div class="p-2 mb-1 rounded border border-secondary-subtle cursor-pointer" style="background: var(--bg);" onclick="this.style.background=\'rgba(99,102,241,0.2)\'; document.getElementById(\'liveSearchResultsDropdown\').style.display=\'none\';">' + tr.innerHTML + '</div>';
+    }
+  });
+  if (count > 0) {
+    dd.innerHTML = '<div class="label mb-2 fw-bold text-primary" style="font-size:11px;"><i class="fa fa-search me-1"></i>Bulunan Sonuçlar (' + count + ')</div>' + html;
+    dd.style.display = "block";
+  } else {
+    dd.innerHTML = '<div class="p-3 text-center muted" style="font-size:12px;"><i class="fa fa-circle-info me-1"></i> Ekrandaki tabloda eşleşen kayıt bulunamadı. Lütfen <strong>Envanter</strong> veya <strong>Zimmet</strong> sekmesinden arayınız.</div>';
+    dd.style.display = "block";
+  }
+}
+document.addEventListener("click", function(e) {
+  const dd = document.getElementById("liveSearchResultsDropdown");
+  const input = document.getElementById("liveHeaderSearchInput");
+  if (dd && input && !input.contains(e.target) && !dd.contains(e.target)) {
+    dd.style.display = "none";
+  }
+});
+</script>
 
 <div class="bottom-nav">
   <a class="bottom-nav-link" href="/dashboard" id="b_dash"><i class="fa fa-chart-line"></i><span>Yönetim</span></a>
@@ -2808,14 +2908,8 @@ def envanter():
 
     rows = ""
     for it in items:
-        if it.status == "Depoda":
-            status_badge = '<span class="badge bg-success">Depoda</span>'
-        elif it.status == "Zimmetli":
-            status_badge = '<span class="badge bg-primary">Zimmetli</span>'
-        elif it.status == "Arızalı / Bakımda":
-            status_badge = '<span class="badge bg-warning text-dark">Arızalı / Bakımda</span>'
-        else:
-            status_badge = '<span class="badge bg-danger">Hek / Hurda</span>'
+        status_badge = get_status_badge(it.status)
+        cat_badge = get_category_badge(it.category)
 
         who = "-"
         if it.status == "Zimmetli" and it.assigned_name:
@@ -2828,10 +2922,10 @@ def envanter():
 
         rows += f"""
         <tr>
-          <td>{it.category}</td>
+          <td>{cat_badge}</td>
           <td>{it.brand}</td>
           <td>{it.model or ''}</td>
-          <td><strong>{it.serial_no}</strong></td>
+          <td><code>{it.serial_no}</code></td>
           <td>{status_badge}</td>
           <td>{who}</td>
           <td>
