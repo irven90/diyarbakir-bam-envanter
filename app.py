@@ -1141,6 +1141,140 @@ def build_daire_envanter_defteri_pdf(daire_adi: str) -> bytes:
     return out if isinstance(out, (bytes, bytearray)) else out.encode("latin-1", errors="ignore")
 
 
+def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarihi: str = "", gerekce_text: str = "") -> bytes:
+    p = FPDF("P", "mm", "A4")
+    p.set_auto_page_break(auto=True, margin=15)
+    p.add_page()
+    font, unicode_ok = pdf_font_setup(p)
+    txt = lambda x: safe_text(x, unicode_ok)
+
+    if os.path.exists(LOGO_PATH):
+        p.image(LOGO_PATH, x=15, y=10, w=22, h=22)
+        p.image(LOGO_PATH, x=173, y=10, w=22, h=22)
+
+    p.set_xy(10, 11)
+    p.set_text_color(15, 23, 42)
+    p.set_font(font, "B", 12)
+    p.cell(0, 5.5, txt("T.C."), ln=1, align="C")
+    p.set_font(font, "B", 14)
+    p.cell(0, 6.5, txt("DİYARBAKIR BÖLGE ADLİYE MAHKEMESİ"), ln=1, align="C")
+    p.set_font(font, "B", 11)
+    p.set_text_color(51, 65, 85)
+    p.cell(0, 5.5, txt("Bilgi İşlem Müdürlüğü"), ln=1, align="C")
+
+    p.ln(4)
+    p.set_text_color(15, 23, 42)
+    p.set_font(font, "B", 13)
+    p.cell(0, 7, txt("TEKNİK DEĞERLENDİRME VE HEK / HURDA AYIRMA TUTANAĞI"), ln=1, align="C")
+    p.set_draw_color(30, 41, 59)
+    p.set_line_width(0.8)
+    p.line(25, p.get_y() + 1, 185, p.get_y() + 1)
+    p.ln(6)
+
+    t_tarih = tutanak_tarihi or today_str()
+    t_no = tutanak_no or f"{datetime.now().strftime('%Y')} / HEK-001"
+    p.set_font(font, "B", 9)
+    p.set_text_color(15, 23, 42)
+    p.cell(95, 5, txt(f"Tutanak Tarihi: {t_tarih}"), 0, 0, "L")
+    p.cell(95, 5, txt(f"Tutanak No: {t_no}"), 0, 1, "R")
+    p.ln(2)
+
+    p.set_font(font, "B", 10)
+    p.set_text_color(15, 23, 42)
+    p.cell(0, 6, txt("I. GEREKÇE VE TEKNİK DEĞERLENDİRME"), ln=1)
+    p.set_font(font, "", 8.5)
+    p.set_text_color(51, 65, 85)
+    g_text = gerekce_text or (
+        "Diyarbakır Bölge Adliye Mahkemesi bünyesinde kullanılmakta iken arızalanan ve aşağıda marka, model ile "
+        "seri numaraları belirtilen bilgi işlem donanımları, Bilgi İşlem Müdürlüğü teknik personellerince fiziki ve teknik "
+        "incelemeye tabi tutulmıştır. Yapılan incelemeler neticesinde; söz konusu donanımların kullanım ömürlerini "
+        "(ekonomik ömrünü) tamamladığı, tamir maliyetlerinin güncel donanım değerini aştığı / yedek parça temininin imkansız "
+        "olduğu tespit edilmiş olup, kamu yararı ve tasarruf tedbirleri gözetilerek HEK (Kullanılamaz/Hurda) durumuna ayrılmasına karar verilmiştir."
+    )
+    p.multi_cell(0, 4.5, txt(g_text))
+    p.ln(4)
+
+    p.set_font(font, "B", 10)
+    p.set_text_color(15, 23, 42)
+    p.cell(0, 6, txt("II. HEK / HURDAYA AYRILAN DONANIM LİSTESİ"), ln=1)
+    p.ln(1)
+
+    p.set_font(font, "B", 8.5)
+    p.set_fill_color(30, 41, 59)
+    p.set_text_color(255, 255, 255)
+    p.cell(10, 6.5, txt("No"), 1, 0, "C", fill=True)
+    p.cell(30, 6.5, txt("Kategori"), 1, 0, "C", fill=True)
+    p.cell(50, 6.5, txt("Marka / Model"), 1, 0, "C", fill=True)
+    p.cell(45, 6.5, txt("Seri Numarası"), 1, 0, "C", fill=True)
+    p.cell(55, 6.5, txt("Arıza / Hek Gerekçesi"), 1, 1, "C", fill=True)
+
+    p.set_font(font, "", 8)
+    p.set_text_color(15, 23, 42)
+    if not devices:
+        p.cell(190, 6.5, txt("Heke ayrılan kayıtlı cihaz bulunamadı."), 1, 1, "C")
+    else:
+        for idx, d in enumerate(devices, 1):
+            fill = idx % 2 == 0
+            p.set_fill_color(248, 250, 252) if fill else p.set_fill_color(255, 255, 255)
+            cat = d.get("category") or "Donanım"
+            brand_mdl = f"{d.get('brand','') } {d.get('model','')}".strip()
+            ser = d.get("serial_no") or "-"
+            reas = d.get("reason") or "Ekonomik Ömrü Dolmuş / Arızalı"
+            
+            p.cell(10, 6, str(idx), 1, 0, "C", fill=fill)
+            p.cell(30, 6, clip_text(p, txt(cat), 28), 1, 0, "L", fill=fill)
+            p.cell(50, 6, clip_text(p, txt(brand_mdl), 48), 1, 0, "L", fill=fill)
+            p.cell(45, 6, clip_text(p, txt(ser), 43), 1, 0, "L", fill=fill)
+            p.cell(55, 6, clip_text(p, txt(reas), 53), 1, 1, "L", fill=fill)
+
+    p.ln(4)
+    p.set_font(font, "B", 9.5)
+    p.cell(0, 5, txt("III. SONUÇ VE İMZA"), ln=1)
+    p.set_font(font, "", 8)
+    p.set_text_color(71, 85, 105)
+    p.multi_cell(0, 4, txt("İşbu tutanak, yukarıda detayları verilen donanımların envanter kayıtlarından 'Hek / Hurda' statüsüne geçirilerek Taşınır Mal Yönetmeliği hükümlerince imha / hurda deposuna devir işlemlerinin başlatılması amacıyla tanzim edilmiş ve birlikte imza altına alınmıştır."))
+
+    p.set_auto_page_break(auto=False)
+    if p.get_y() > 235:
+        p.add_page()
+    else:
+        p.ln(6)
+
+    y_sig = p.get_y()
+    col_w = 58
+    gap = 8
+    x1 = 10
+    x2 = x1 + col_w + gap
+    x3 = x2 + col_w + gap
+
+    p.set_font(font, "B", 8.5)
+    p.set_text_color(15, 23, 42)
+    p.set_xy(x1, y_sig)
+    p.cell(col_w, 5, txt("İnceleyen Teknik Personel"), align="C")
+    p.set_xy(x2, y_sig)
+    p.cell(col_w, 5, txt("Bilgi İşlem Müdürü"), align="C")
+    p.set_xy(x3, y_sig)
+    p.cell(col_w, 5, txt("İdari İşler Müdürü"), align="C")
+
+    p.set_font(font, "", 8)
+    p.set_xy(x1, y_sig + 5)
+    p.cell(col_w, 4, txt("Arda EKER (327360)"), align="C")
+    p.set_xy(x2, y_sig + 5)
+    p.cell(col_w, 4, txt("Murat İRVEN (187665)"), align="C")
+    p.set_xy(x3, y_sig + 5)
+    p.cell(col_w, 4, txt("Ahmet AYDIN (187696)"), align="C")
+
+    y_line = y_sig + 16
+    p.set_draw_color(30, 41, 59)
+    p.set_line_width(0.4)
+    p.line(x1 + 5, y_line, x1 + col_w - 5, y_line)
+    p.line(x2 + 5, y_line, x2 + col_w - 5, y_line)
+    p.line(x3 + 5, y_line, x3 + col_w - 5, y_line)
+
+    out = p.output(dest="S")
+    return out if isinstance(out, (bytes, bytearray)) else out.encode("latin-1", errors="ignore")
+
+
 def purge_dirty_concat_records():
     try:
         # DB'de kayıtlı kirli/birleşik isim kullanıcılarını temizle
@@ -2654,7 +2788,10 @@ def envanter():
     <div class="card p-4 mb-3">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
         <h6><i class="fa fa-file-excel text-success me-2"></i>Toplu Excel İle Cihaz Yükle (.xlsx)</h6>
-        <a href="/admin/download_envanter_sablon" class="btn btn-sm btn-outline-success fw-bold"><i class="fa fa-file-arrow-down me-1"></i> Örnek Şablon Excel İndir</a>
+        <div>
+          <a href="/admin/download_envanter_sablon" class="btn btn-sm btn-outline-success fw-bold me-2"><i class="fa fa-file-arrow-down me-1"></i> Örnek Şablon Excel İndir</a>
+          <a href="/admin/export/hek_tutanak.pdf" class="btn btn-sm btn-outline-danger fw-bold"><i class="fa fa-file-pdf me-1"></i> Resmi Hek / Hurda Tutanağı (PDF) Üret</a>
+        </div>
       </div>
       <div class="label mb-3">Sistem sütun başlıklarını (Kategori, Marka, Model, Seri No) otomatik algılar. Şablon Excel dosyasını indirip verilerinizi yapıştırabilirsiniz.</div>
       <form method="post" action="/admin/import_envanter_excel" enctype="multipart/form-data" class="row g-2 align-items-center">
@@ -5078,6 +5215,29 @@ def admin_export_daire_toplu_pdf():
         buf.seek(0)
         safe_unit_name = re.sub(r'[^a-zA-Z0-9]', '_', unit).strip('_')
         return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=f"{safe_unit_name}_toplu_zimmet_raporu.pdf")
+    except Exception as e:
+        return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
+
+
+@app.route("/admin/export/hek_tutanak.pdf")
+def admin_export_hek_tutanak_pdf():
+    if not require_login():
+        return redirect(url_for("login"))
+    try:
+        hek_items = InventoryItem.query.filter_by(status="Hek / Hurda").all()
+        dev_list = []
+        for it in hek_items:
+            dev_list.append({
+                "category": it.category or "Donanım",
+                "brand": it.brand or "",
+                "model": it.model or "",
+                "serial_no": it.serial_no or "-",
+                "reason": "Ekonomik Ömrünü Tamamlamış / Arızalı"
+            })
+        pdf = build_hek_hurda_pdf(dev_list)
+        buf = io.BytesIO(pdf)
+        buf.seek(0)
+        return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name="hek_hurda_ayirma_tutanagi.pdf")
     except Exception as e:
         return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
 
