@@ -2930,7 +2930,27 @@ def envanter():
                         updated_count += 1
                 db.session.commit()
                 log_audit("TOPLU_HEK", f"{updated_count} adet cihaz Hek/Hurdaya ayrıldı: {gerekce}")
-                message = f"Seçilen {updated_count} adet cihaz başarıyla 'Hek / Hurda' statüsüne geçirildi ve kilitlendi."
+                message = f"Seçilen {updated_count} adet cihaz başarıyla 'Hek / Hurda' statüsüne geçirildi."
+            except Exception as e:
+                db.session.rollback()
+                message = f"Hata: {e}"
+
+        elif action == "unhek":
+            try:
+                if not is_admin():
+                    raise ValueError("Bu işlemi sadece Admin yetkisine sahip Murat İRVEN yapabilir.")
+                iid = int(request.form.get("id"))
+                it = InventoryItem.query.get(iid)
+                if not it:
+                    raise ValueError("Kayıt bulunamadı.")
+                if it.status != "Hek / Hurda":
+                    raise ValueError("Cihaz zaten hurda durumunda değil.")
+                it.status = "Depoda"
+                it.last_event = "Hurda İptal Edildi -> Depoda"
+                it.last_event_at = now_str()
+                db.session.commit()
+                log_audit("HURDA_IPTAL", f"Cihaz #{it.id} ({it.serial_no}) hurda durumu iptal edildi -> Depoda")
+                message = f"'{it.brand} {it.serial_no}' cihazı hurda durumundan çıkarıldı ve Depoda statüsüne alındı."
             except Exception as e:
                 db.session.rollback()
                 message = f"Hata: {e}"
@@ -2943,6 +2963,8 @@ def envanter():
     cnt_ariza = sum(1 for x in items if x.status == "Arızalı / Bakımda")
     cnt_hurda = sum(1 for x in items if x.status == "Hek / Hurda")
 
+    is_admin_user = is_admin()
+
     rows = ""
     for it in items:
         status_badge = get_status_badge(it.status)
@@ -2952,11 +2974,28 @@ def envanter():
         if it.status == "Zimmetli" and it.assigned_name:
             who = f"{format_tr_name(it.assigned_name)} / {it.assigned_sicil or ''}"
 
+        chk_html = f'<input type="checkbox" name="selected_ids" value="{it.id}" class="form-check-input item-checkbox">'
+
         if it.status == "Hek / Hurda":
-            chk_html = '<input type="checkbox" class="form-check-input" disabled title="Hurdaya ayrılmış cihaz kilitlidir">'
-            actions_html = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa fa-lock me-1"></i>Hurda (Kilitli)</span>'
+            if is_admin_user:
+                actions_html = f"""
+                <div class="d-flex gap-1 align-items-center">
+                  <a href="/admin/export/hek_tutanak.pdf?ids={it.id}" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:11px;" title="Tekil Hek Tutanağı PDF"><i class="fa fa-file-pdf me-1"></i>Tutanak</a>
+                  <form method="post" style="display:inline" onsubmit="return confirm('{it.brand} {it.serial_no} seri nolu cihazı hurda durumundan çıkarıp Depoda statüsüne geri almak istediğinize emin misiniz?');">
+                    <input type="hidden" name="action" value="unhek">
+                    <input type="hidden" name="id" value="{it.id}">
+                    <button class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:11px;" title="Hurdaya Ayırmayı İptal Et ve Depoya Al"><i class="fa fa-rotate-left me-1"></i>Depoya Al</button>
+                  </form>
+                </div>
+                """
+            else:
+                actions_html = f"""
+                <div class="d-flex gap-1 align-items-center">
+                  <a href="/admin/export/hek_tutanak.pdf?ids={it.id}" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:11px;" title="Tekil Hek Tutanağı PDF"><i class="fa fa-file-pdf me-1"></i>Tutanak</a>
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size:11px;"><i class="fa fa-lock me-1"></i>Hurda (Kilitli)</span>
+                </div>
+                """
         else:
-            chk_html = f'<input type="checkbox" name="selected_ids" value="{it.id}" class="form-check-input item-checkbox">'
             status_opts = ""
             for st_val in DEVICE_STATUSES:
                 sel = "selected" if it.status == st_val else ""
@@ -3067,9 +3106,14 @@ def envanter():
           <button type="button" class="btn btn-sm btn-outline-danger" onclick="filterByStatus('Hek / Hurda', this)"><i class="fa fa-ban me-1"></i>Hurda ({cnt_hurda})</button>
         </div>
 
-        <button type="button" class="btn btn-sm btn-danger fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#bulkHurdaModal">
-          <i class="fa fa-trash-can me-1"></i> Seçilenleri Toplu Hek / Hurdaya Ayır
-        </button>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="exportSelectedHekPdf()">
+            <i class="fa fa-file-pdf me-1"></i> Seçilenler İçin Hek Tutanağı (PDF) Üret
+          </button>
+          <button type="button" class="btn btn-sm btn-danger fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#bulkHurdaModal">
+            <i class="fa fa-trash-can me-1"></i> Seçilenleri Toplu Hek / Hurdaya Ayır
+          </button>
+        </div>
       </div>
 
       <div class="row g-2 align-items-center">
@@ -3140,6 +3184,16 @@ def envanter():
     <script>
     let currentStatusFilter = "all";
     let currentCatFilter = "all";
+
+    function exportSelectedHekPdf() {{
+      const selected = document.querySelectorAll(".item-checkbox:checked");
+      if (selected.length === 0) {{
+        window.location.href = "/admin/export/hek_tutanak.pdf";
+        return;
+      }}
+      const ids = Array.from(selected).map(cb => cb.value).join(",");
+      window.location.href = "/admin/export/hek_tutanak.pdf?ids=" + ids;
+    }}
 
     function filterByStatus(st, btn) {{
       currentStatusFilter = st;
@@ -5581,20 +5635,33 @@ def admin_export_hek_tutanak_pdf():
     if not require_login():
         return redirect(url_for("login"))
     try:
-        hek_items = InventoryItem.query.filter_by(status="Hek / Hurda").all()
+        raw_ids = request.args.get("ids") or ""
+        if raw_ids:
+            try:
+                id_list = [int(x.strip()) for x in raw_ids.split(",") if x.strip().isdigit()]
+                hek_items = InventoryItem.query.filter(InventoryItem.id.in_(id_list)).all()
+            except Exception:
+                hek_items = InventoryItem.query.filter_by(status="Hek / Hurda").all()
+        else:
+            hek_items = InventoryItem.query.filter_by(status="Hek / Hurda").all()
+
         dev_list = []
         for it in hek_items:
+            reason_str = "Ekonomik Ömrünü Tamamlamış / Arızalı"
+            if it.last_event and "Hek / Hurda:" in it.last_event:
+                reason_str = it.last_event.replace("Hek / Hurda:", "").strip()
             dev_list.append({
                 "category": it.category or "Donanım",
                 "brand": it.brand or "",
                 "model": it.model or "",
                 "serial_no": it.serial_no or "-",
-                "reason": "Ekonomik Ömrünü Tamamlamış / Arızalı"
+                "reason": reason_str
             })
         pdf = build_hek_hurda_pdf(dev_list)
         buf = io.BytesIO(pdf)
         buf.seek(0)
-        return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name="hek_hurda_ayirma_tutanagi.pdf")
+        download_name = f"hek_hurda_tutanagi_{today_str()}.pdf" if not raw_ids else f"secilen_hek_tutanagi_{today_str()}.pdf"
+        return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=download_name)
     except Exception as e:
         return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
 
