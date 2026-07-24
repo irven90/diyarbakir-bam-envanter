@@ -1198,10 +1198,10 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
     p.set_fill_color(30, 41, 59)
     p.set_text_color(255, 255, 255)
     p.cell(10, 6.5, txt("No"), 1, 0, "C", fill=True)
-    p.cell(30, 6.5, txt("Kategori"), 1, 0, "C", fill=True)
-    p.cell(50, 6.5, txt("Marka / Model"), 1, 0, "C", fill=True)
-    p.cell(45, 6.5, txt("Seri Numarası"), 1, 0, "C", fill=True)
-    p.cell(55, 6.5, txt("Arıza / Hek Gerekçesi"), 1, 1, "C", fill=True)
+    p.cell(25, 6.5, txt("Kategori"), 1, 0, "C", fill=True)
+    p.cell(40, 6.5, txt("Marka / Model"), 1, 0, "C", fill=True)
+    p.cell(35, 6.5, txt("Seri Numarası"), 1, 0, "C", fill=True)
+    p.cell(80, 6.5, txt("Arıza / Hek Gerekçesi"), 1, 1, "C", fill=True)
 
     p.set_font(font, "", 8)
     p.set_text_color(15, 23, 42)
@@ -1217,10 +1217,10 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
             reas = d.get("reason") or "Ekonomik Ömrü Dolmuş / Arızalı"
             
             p.cell(10, 6, str(idx), 1, 0, "C", fill=fill)
-            p.cell(30, 6, clip_text(p, txt(cat), 28), 1, 0, "L", fill=fill)
-            p.cell(50, 6, clip_text(p, txt(brand_mdl), 48), 1, 0, "L", fill=fill)
-            p.cell(45, 6, clip_text(p, txt(ser), 43), 1, 0, "L", fill=fill)
-            p.cell(55, 6, clip_text(p, txt(reas), 53), 1, 1, "L", fill=fill)
+            p.cell(25, 6, clip_text(p, txt(cat), 23), 1, 0, "L", fill=fill)
+            p.cell(40, 6, clip_text(p, txt(brand_mdl), 38), 1, 0, "L", fill=fill)
+            p.cell(35, 6, clip_text(p, txt(ser), 33), 1, 0, "L", fill=fill)
+            p.cell(80, 6, clip_text(p, txt(reas), 78), 1, 1, "L", fill=fill)
 
     p.ln(4)
     p.set_font(font, "B", 9.5)
@@ -2869,6 +2869,8 @@ def envanter():
                 it = InventoryItem.query.get(iid)
                 if not it:
                     raise ValueError("Kayıt bulunamadı.")
+                if it.status == "Hek / Hurda":
+                    raise ValueError("Hurdaya ayrılmış cihazlar kilitlidir, silinemez.")
                 ser_num = it.serial_no
                 db.session.delete(it)
                 db.session.commit()
@@ -2885,6 +2887,8 @@ def envanter():
                 it = InventoryItem.query.get(iid)
                 if not it:
                     raise ValueError("Kayıt bulunamadı.")
+                if it.status == "Hek / Hurda":
+                    raise ValueError("Hurdaya ayrılmış cihaz kilitlidir, durumu değiştirilemez.")
                 if new_st not in DEVICE_STATUSES:
                     raise ValueError("Geçersiz durum seçimi.")
                 old_st = it.status
@@ -2904,7 +2908,40 @@ def envanter():
                 db.session.rollback()
                 message = f"Hata: {e}"
 
+        elif action == "bulk_hek":
+            try:
+                selected_ids = request.form.getlist("selected_ids")
+                gerekce = (request.form.get("bulk_reason") or "Ekonomik Ömrünü Tamamlamış / Arızalı").strip()
+                if not selected_ids:
+                    raise ValueError("Lütfen hurdaya ayrılacak en az bir cihaz seçin.")
+                
+                updated_count = 0
+                for item_id in selected_ids:
+                    it = InventoryItem.query.get(int(item_id))
+                    if it and it.status != "Hek / Hurda":
+                        it.status = "Hek / Hurda"
+                        it.last_event = f"Hek / Hurda: {gerekce}"
+                        it.last_event_at = now_str()
+                        it.assigned_name = None
+                        it.assigned_sicil = None
+                        it.assigned_title = None
+                        it.assigned_unit = None
+                        it.assigned_at = None
+                        updated_count += 1
+                db.session.commit()
+                log_audit("TOPLU_HEK", f"{updated_count} adet cihaz Hek/Hurdaya ayrıldı: {gerekce}")
+                message = f"Seçilen {updated_count} adet cihaz başarıyla 'Hek / Hurda' statüsüne geçirildi ve kilitlendi."
+            except Exception as e:
+                db.session.rollback()
+                message = f"Hata: {e}"
+
     items = InventoryItem.query.order_by(InventoryItem.id.desc()).all()
+
+    cnt_total = len(items)
+    cnt_depo = sum(1 for x in items if x.status == "Depoda")
+    cnt_zimmet = sum(1 for x in items if x.status == "Zimmetli")
+    cnt_ariza = sum(1 for x in items if x.status == "Arızalı / Bakımda")
+    cnt_hurda = sum(1 for x in items if x.status == "Hek / Hurda")
 
     rows = ""
     for it in items:
@@ -2915,20 +2952,17 @@ def envanter():
         if it.status == "Zimmetli" and it.assigned_name:
             who = f"{format_tr_name(it.assigned_name)} / {it.assigned_sicil or ''}"
 
-        status_opts = ""
-        for st_val in DEVICE_STATUSES:
-            sel = "selected" if it.status == st_val else ""
-            status_opts += f'<option value="{st_val}" {sel}>{st_val}</option>'
+        if it.status == "Hek / Hurda":
+            chk_html = '<input type="checkbox" class="form-check-input" disabled title="Hurdaya ayrılmış cihaz kilitlidir">'
+            actions_html = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa fa-lock me-1"></i>Hurda (Kilitli)</span>'
+        else:
+            chk_html = f'<input type="checkbox" name="selected_ids" value="{it.id}" class="form-check-input item-checkbox">'
+            status_opts = ""
+            for st_val in DEVICE_STATUSES:
+                sel = "selected" if it.status == st_val else ""
+                status_opts += f'<option value="{st_val}" {sel}>{st_val}</option>'
 
-        rows += f"""
-        <tr>
-          <td>{cat_badge}</td>
-          <td>{it.brand}</td>
-          <td>{it.model or ''}</td>
-          <td><code>{it.serial_no}</code></td>
-          <td>{status_badge}</td>
-          <td>{who}</td>
-          <td>
+            actions_html = f"""
             <div class="d-flex gap-1 align-items-center">
               <form method="post" style="display:inline">
                 <input type="hidden" name="action" value="change_status">
@@ -2943,7 +2977,18 @@ def envanter():
                 <button class="btn btn-sm btn-outline-danger" title="Sil"><i class="fa fa-trash"></i></button>
               </form>
             </div>
-          </td>
+            """
+
+        rows += f"""
+        <tr data-status="{it.status}" data-cat="{it.category}">
+          <td class="text-center">{chk_html}</td>
+          <td>{cat_badge}</td>
+          <td>{it.brand}</td>
+          <td>{it.model or ''}</td>
+          <td><code>{it.serial_no}</code></td>
+          <td>{status_badge}</td>
+          <td>{who}</td>
+          <td>{actions_html}</td>
         </tr>
         """
 
@@ -2953,8 +2998,8 @@ def envanter():
 
     content = f"""
     <div class="card p-4 mb-3">
-      <h3>Envanter</h3>
-      <div class="label">Model opsiyonel. Seri No benzersizdir.</div>
+      <h3>Envanter Yönetim Paneli</h3>
+      <div class="label">Tüm donanım cihazlarının canlı takibi, toplu heke ayırma ve filtreleme alanı.</div>
     </div>
 
     <!-- Excel İle Toplu Cihaz Yükleme Kartı -->
@@ -2963,7 +3008,7 @@ def envanter():
         <h6><i class="fa fa-file-excel text-success me-2"></i>Toplu Excel İle Cihaz Yükle (.xlsx)</h6>
         <div>
           <a href="/admin/download_envanter_sablon" class="btn btn-sm btn-outline-success fw-bold me-2"><i class="fa fa-file-arrow-down me-1"></i> Örnek Şablon Excel İndir</a>
-          <a href="/admin/export/hek_tutanak.pdf" class="btn btn-sm btn-outline-danger fw-bold"><i class="fa fa-file-pdf me-1"></i> Resmi Hek / Hurda Tutanağı (PDF) Üret</a>
+          <a href="/admin/export/hek_tutanak.pdf" class="btn btn-sm btn-danger fw-bold"><i class="fa fa-file-pdf me-1"></i> Resmi Hek / Hurda Tutanağı (PDF) Üret</a>
         </div>
       </div>
       <div class="label mb-3">Sistem sütun başlıklarını (Kategori, Marka, Model, Seri No) otomatik algılar. Şablon Excel dosyasını indirip verilerinizi yapıştırabilirsiniz.</div>
@@ -2977,8 +3022,9 @@ def envanter():
       </form>
     </div>
 
+    <!-- Cihaz Ekleme Kartı -->
     <div class="card p-4 mb-3">
-      <h6>Cihaz Ekle</h6>
+      <h6>Yeni Cihaz Ekle</h6>
       <form method="post" class="row g-3">
         <input type="hidden" name="action" value="add">
         <div class="col-md-3">
@@ -2999,28 +3045,166 @@ def envanter():
             <option value="Epson">
             <option value="Brother">
             <option value="Pantum">
+            <option value="RICOH">
+            <option value="AVISION">
+            <option value="CANON">
           </datalist>
         </div>
         <div class="col-md-3"><div class="label">Model (Opsiyonel)</div><input class="form-control" name="model"></div>
         <div class="col-md-3"><div class="label">Seri No</div><input class="form-control" name="serial_no" required></div>
-        <div class="col-12"><button class="btn btn-primary w-100">Kaydet</button></div>
+        <div class="col-12"><button class="btn btn-primary w-100 fw-bold"><i class="fa fa-plus me-1"></i> Kaydet</button></div>
       </form>
     </div>
 
-    <div class="card p-4">
-      <h6>Liste</h6>
-      <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead>
-            <tr>
-              <th>Kategori</th><th>Marka</th><th>Model</th><th>Seri No</th>
-              <th>Durum</th><th>Kime Zimmetli</th><th></th>
-            </tr>
-          </thead>
-          <tbody>{rows or '<tr><td colspan="7">Kayıt yok.</td></tr>'}</tbody>
-        </table>
+    <!-- Filtreleme & Arama Çubuğu -->
+    <div class="card p-3 mb-3" style="background: var(--card); border: 1px solid var(--border);">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="btn-group flex-wrap" role="group" id="statusFilterTabs">
+          <button type="button" class="btn btn-sm btn-primary active" onclick="filterByStatus('all', this)"><i class="fa fa-layer-group me-1"></i>Tümü ({cnt_total})</button>
+          <button type="button" class="btn btn-sm btn-outline-success" onclick="filterByStatus('Depoda', this)"><i class="fa fa-box me-1"></i>Depoda ({cnt_depo})</button>
+          <button type="button" class="btn btn-sm btn-outline-info" onclick="filterByStatus('Zimmetli', this)"><i class="fa fa-user-check me-1"></i>Zimmetli ({cnt_zimmet})</button>
+          <button type="button" class="btn btn-sm btn-outline-warning" onclick="filterByStatus('Arızalı / Bakımda', this)"><i class="fa fa-wrench me-1"></i>Arızalı ({cnt_ariza})</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="filterByStatus('Hek / Hurda', this)"><i class="fa fa-ban me-1"></i>Hurda ({cnt_hurda})</button>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-danger fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#bulkHurdaModal">
+          <i class="fa fa-trash-can me-1"></i> Seçilenleri Toplu Hek / Hurdaya Ayır
+        </button>
+      </div>
+
+      <div class="row g-2 align-items-center">
+        <div class="col-md-7">
+          <div class="d-flex align-items-center gap-1 flex-wrap" id="catFilterBtns">
+            <span class="label text-muted me-1 fw-bold" style="font-size:11px;">Kategori:</span>
+            <button type="button" class="btn btn-xs btn-secondary active py-1 px-2" style="font-size:11px;" onclick="filterByCategory('all', this)">Tümü</button>
+            <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" style="font-size:11px;" onclick="filterByCategory('Kasa', this)"><i class="fa-solid fa-desktop me-1"></i>Kasa</button>
+            <button type="button" class="btn btn-xs btn-outline-info py-1 px-2" style="font-size:11px;" onclick="filterByCategory('Monitör', this)"><i class="fa-solid fa-tv me-1"></i>Monitör</button>
+            <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2" style="font-size:11px;" onclick="filterByCategory('Yazıcı', this)"><i class="fa-solid fa-print me-1"></i>Yazıcı</button>
+            <button type="button" class="btn btn-xs btn-outline-success py-1 px-2" style="font-size:11px;" onclick="filterByCategory('Tarayıcı', this)"><i class="fa-solid fa-print me-1"></i>Tarayıcı</button>
+          </div>
+        </div>
+
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-transparent border-secondary-subtle" style="color:var(--heading);"><i class="fa fa-search"></i></span>
+            <input type="text" id="envanterSearchInput" class="form-control form-control-sm" placeholder="Marka, model, seri no veya personel ara..." onkeyup="filterEnvanterTable()">
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Envanter Listesi -->
+    <div class="card p-4">
+      <h6 class="mb-3"><i class="fa fa-list me-2"></i>Cihaz Envanter Listesi</h6>
+      <form method="post" id="bulkHurdaForm">
+        <input type="hidden" name="action" value="bulk_hek">
+        <input type="hidden" name="bulk_reason" id="hidden_bulk_reason" value="">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="envanterMainTable">
+            <thead>
+              <tr>
+                <th style="width:40px;" class="text-center"><input type="checkbox" id="checkAllItems" class="form-check-input" onclick="toggleSelectAllItems(this)"></th>
+                <th>Kategori</th><th>Marka</th><th>Model</th><th>Seri No</th>
+                <th>Durum</th><th>Kime Zimmetli</th><th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>{rows or '<tr><td colspan="8" class="text-center">Kayıt yok.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </form>
+    </div>
+
+    <!-- Toplu Hurda Modalı -->
+    <div class="modal fade" id="bulkHurdaModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background:var(--card); color:var(--heading); border:1px solid var(--border);">
+          <div class="modal-header border-bottom border-secondary-subtle">
+            <h5 class="modal-title fw-bold text-danger"><i class="fa fa-trash-can me-2"></i>Toplu Hek / Hurdaya Ayır</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted mb-3">Seçilen cihazlar Taşınır Mal Yönetmeliği uyarınca envanterden 'Hek / Hurda' durumuna geçirilerek kilitlenecektir.</p>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Arıza / Hek Gerekçesi</label>
+              <input type="text" id="bulkReasonInput" class="form-control" value="Ekonomik Ömrünü Tamamlamış / Arızalı" placeholder="Gerekçeyi buraya yazın...">
+            </div>
+          </div>
+          <div class="modal-footer border-top border-secondary-subtle">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+            <button type="button" class="btn btn-danger fw-bold" onclick="submitBulkHurda()">Hek / Hurdaya Ayır</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    let currentStatusFilter = "all";
+    let currentCatFilter = "all";
+
+    function filterByStatus(st, btn) {{
+      currentStatusFilter = st;
+      document.querySelectorAll("#statusFilterTabs .btn").forEach(b => {{
+        b.classList.remove("active");
+        b.classList.remove("btn-primary");
+        b.classList.remove("btn-success");
+        b.classList.remove("btn-info");
+        b.classList.remove("btn-warning");
+        b.classList.remove("btn-danger");
+        b.classList.add("btn-outline-secondary");
+      }});
+      btn.classList.add("active");
+      filterEnvanterTable();
+    }}
+
+    function filterByCategory(cat, btn) {{
+      currentCatFilter = cat;
+      document.querySelectorAll("#catFilterBtns .btn").forEach(b => {{
+        b.classList.remove("active");
+        b.classList.remove("btn-secondary");
+        b.classList.add("btn-outline-secondary");
+      }});
+      btn.classList.add("active");
+      filterEnvanterTable();
+    }}
+
+    function filterEnvanterTable() {{
+      const q = (document.getElementById("envanterSearchInput").value || "").trim().toLowerCase();
+      const rows = document.querySelectorAll("#envanterMainTable tbody tr");
+      
+      rows.forEach(tr => {{
+        const st = tr.getAttribute("data-status") || "";
+        const cat = tr.getAttribute("data-cat") || "";
+        const text = tr.innerText.toLowerCase();
+        
+        const stMatch = (currentStatusFilter === "all" || st === currentStatusFilter);
+        const catMatch = (currentCatFilter === "all" || cat === currentCatFilter);
+        const qMatch = (!q || text.includes(q));
+        
+        if (stMatch && catMatch && qMatch) {{
+          tr.style.display = "";
+        }} else {{
+          tr.style.display = "none";
+        }}
+      }});
+    }}
+
+    function toggleSelectAllItems(master) {{
+      document.querySelectorAll(".item-checkbox").forEach(cb => {{
+        if (!cb.disabled) cb.checked = master.checked;
+      }});
+    }}
+
+    function submitBulkHurda() {{
+      const selected = document.querySelectorAll(".item-checkbox:checked");
+      if (selected.length === 0) {{
+        alert("Lütfen hurdaya ayrılacak en az bir cihaz seçin.");
+        return;
+      }}
+      const reason = document.getElementById("bulkReasonInput").value.trim() || "Ekonomik Ömrünü Tamamlamış / Arızalı";
+      document.getElementById("hidden_bulk_reason").value = reason;
+      document.getElementById("bulkHurdaForm").submit();
+    }}
+    </script>
     """
     return render_template_string(BASE_HTML, content=content, message=message, is_admin=is_admin())
 
