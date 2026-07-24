@@ -2474,8 +2474,8 @@ def dashboard():
             badge_cls = "bg-primary" if cnt > 0 else "bg-secondary"
             grid_items_html += f"""
             <div class="col-md-3 col-6">
-              <div class="card p-2 text-center" style="background:#1e293b; border:1px solid #334155;">
-                <div style="font-size:12px; font-weight:700; color:#f8fafc;" class="text-truncate">{u_name}</div>
+              <div class="card p-2 text-center" style="background:var(--card); border:1px solid var(--border);">
+                <div style="font-size:12px; font-weight:700; color:var(--heading);" class="text-truncate">{u_name}</div>
                 <div class="d-flex justify-content-between align-items-center mt-2 px-1">
                   <span class="badge {badge_cls}" style="font-size:11px;">{cnt} Cihaz</span>
                   <a href="/admin/export/daire_defteri.pdf?daire_adi={u_name}" class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:11px;" title="PDF Defter İndir">
@@ -2501,66 +2501,66 @@ def dashboard():
       <div class="row g-3 mb-3">
         <!-- 17 Ceza Dairesi Kartı -->
         <div class="col-md-3 col-6">
-          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('ceza_group')" style="border-left:4px solid #ef4444; background:#0f172a; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('ceza_group')" style="border-left:4px solid #ef4444; background:var(--card); cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="d-flex justify-content-between align-items-center">
               <div class="label mb-1 text-danger fw-bold">17 CEZA DAİRESİ</div>
-              <i class="fa fa-chevron-down text-white"></i>
+              <i class="fa fa-chevron-down" style="color:var(--heading);"></i>
             </div>
-            <div class="fs-4 fw-bold text-white">{unit_stats.get('Ceza Daireleri', 0)} <span style="font-size:13px; font-weight:700; color:#e2e8f0;" class="ms-1">Aktif Cihaz</span></div>
+            <div class="fs-4 fw-bold" style="color:var(--heading);">{unit_stats.get('Ceza Daireleri', 0)} <span style="font-size:13px; font-weight:700; color:var(--muted);" class="ms-1">Aktif Cihaz</span></div>
           </div>
         </div>
 
         <!-- 12 Hukuk Dairesi Kartı -->
         <div class="col-md-3 col-6">
-          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('hukuk_group')" style="border-left:4px solid #3b82f6; background:#0f172a; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('hukuk_group')" style="border-left:4px solid #3b82f6; background:var(--card); cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="d-flex justify-content-between align-items-center">
               <div class="label mb-1 text-primary fw-bold">12 HUKUK DAİRESİ</div>
-              <i class="fa fa-chevron-down text-white"></i>
+              <i class="fa fa-chevron-down" style="color:var(--heading);"></i>
             </div>
-            <div class="fs-4 fw-bold text-white">{unit_stats.get('Hukuk Daireleri', 0)} <span style="font-size:13px; font-weight:700; color:#e2e8f0;" class="ms-1">Aktif Cihaz</span></div>
+            <div class="fs-4 fw-bold" style="color:var(--heading);">{unit_stats.get('Hukuk Daireleri', 0)} <span style="font-size:13px; font-weight:700; color:var(--muted);" class="ms-1">Aktif Cihaz</span></div>
           </div>
         </div>
 
         <!-- 8 Duruşma Salonu Kartı -->
         <div class="col-md-3 col-6">
-          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('durusma_group')" style="border-left:4px solid #10b981; background:#0f172a; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('durusma_group')" style="border-left:4px solid #10b981; background:var(--card); cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="d-flex justify-content-between align-items-center">
               <div class="label mb-1 text-success fw-bold">8 DURUŞMA SALONU</div>
-              <i class="fa fa-chevron-down text-white"></i>
+              <i class="fa fa-chevron-down" style="color:var(--heading);"></i>
             </div>
-            <div class="fs-4 fw-bold text-white">{unit_stats.get('Duruşma Salonları (Ortak Kullanım)', 0)} <span style="font-size:13px; font-weight:700; color:#e2e8f0;" class="ms-1">Aktif Cihaz</span></div>
+            <div class="fs-4 fw-bold" style="color:var(--heading);">{unit_stats.get('Duruşma Salonları (Ortak Kullanım)', 0)} <span style="font-size:13px; font-weight:700; color:var(--muted);" class="ms-1">Aktif Cihaz</span></div>
           </div>
         </div>
 
         <!-- İdari Bürolar Kartı -->
         <div class="col-md-3 col-6">
-          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('idari_group')" style="border-left:4px solid #f59e0b; background:#0f172a; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div class="card p-3 cursor-pointer" onclick="showGroupDetails('idari_group')" style="border-left:4px solid #f59e0b; background:var(--card); cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="d-flex justify-content-between align-items-center">
               <div class="label mb-1 text-warning fw-bold">İDARİ BÜROLAR & MAKAM</div>
-              <i class="fa fa-chevron-down text-white"></i>
+              <i class="fa fa-chevron-down" style="color:var(--heading);"></i>
             </div>
-            <div class="fs-4 fw-bold text-white">{idari_units_total} <span style="font-size:13px; font-weight:700; color:#e2e8f0;" class="ms-1">Aktif Cihaz</span></div>
+            <div class="fs-4 fw-bold" style="color:var(--heading);">{idari_units_total} <span style="font-size:13px; font-weight:700; color:var(--muted);" class="ms-1">Aktif Cihaz</span></div>
           </div>
         </div>
       </div>
 
       <!-- Tıklanınca Açılan Canlı Daire Detay Panelleri -->
-      <div id="ceza_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:#0b1120; border:1px solid #ef4444;">
+      <div id="ceza_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:var(--card); border:1px solid #ef4444;">
         <h6 class="text-danger fw-bold mb-3"><i class="fa fa-gavel me-2"></i>17 Ceza Dairesi Canlı Envanter Haritası</h6>
         <div class="row g-2">{unit_details_html.get('Ceza Daireleri', '')}</div>
       </div>
 
-      <div id="hukuk_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:#0b1120; border:1px solid #3b82f6;">
+      <div id="hukuk_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:var(--card); border:1px solid #3b82f6;">
         <h6 class="text-primary fw-bold mb-3"><i class="fa fa-scale-balanced me-2"></i>12 Hukuk Dairesi Canlı Envanter Haritası</h6>
         <div class="row g-2">{unit_details_html.get('Hukuk Daireleri', '')}</div>
       </div>
 
-      <div id="durusma_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:#0b1120; border:1px solid #10b981;">
+      <div id="durusma_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:var(--card); border:1px solid #10b981;">
         <h6 class="text-success fw-bold mb-3"><i class="fa fa-chair me-2"></i>8 Ortak Duruşma Salonu Canlı Envanter Haritası</h6>
         <div class="row g-2">{unit_details_html.get('Duruşma Salonları (Ortak Kullanım)', '')}</div>
       </div>
 
-      <div id="idari_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:#0b1120; border:1px solid #f59e0b;">
+      <div id="idari_group" class="group-detail-panel p-3 rounded mb-3" style="display:none; background:var(--card); border:1px solid #f59e0b;">
         <h6 class="text-warning fw-bold mb-3"><i class="fa fa-building me-2"></i>Başsavcılık, Komisyon ve İdari Bürolar Canlı Envanter Haritası</h6>
         <div class="row g-2">{idari_grid}</div>
       </div>
@@ -2581,12 +2581,12 @@ def dashboard():
     """
 
     content = f"""
-    <div class="card p-4 mb-3" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 23, 42, 0.4) 100%); border: 1px solid rgba(99, 102, 241, 0.25);">
+    <div class="card p-4 mb-3">
       <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
         <img src="/logo.png" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);" />
         <div>
           <h4 class="mb-0 fw-bold" style="letter-spacing: -0.5px;">Hoş geldiniz, {session.get('user')}</h4>
-          <div class="label mt-1" style="color: #a5b4fc; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Diyarbakır Bölge Adliye Mahkemesi Bilgi İşlem Müdürlüğü Envanter Paneli</div>
+          <div class="label mt-1" style="color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Diyarbakır Bölge Adliye Mahkemesi Bilgi İşlem Müdürlüğü Envanter Paneli</div>
         </div>
         <button type="button" onclick="window.location.reload()" class="btn btn-sm btn-outline-warning ms-auto fw-bold"><i class="fa fa-rotate-right me-1"></i> Sayfayı Yenile</button>
       </div>
@@ -2604,7 +2604,7 @@ def dashboard():
     <!-- Chart.js Analiz Kartları -->
     <div class="row g-3 my-1">
       <div class="col-lg-7">
-        <div class="card p-4 h-100" style="background: rgba(30, 41, 59, 0.35); border: 1px solid var(--border);">
+        <div class="card p-4 h-100">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h6 class="mb-0 fw-bold" style="color: var(--heading);"><i class="fa fa-chart-bar me-2 text-primary"></i> Daire / Birim Bazlı Cihaz Dağılım Grafiği</h6>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Top Birimler</span>
@@ -2615,7 +2615,7 @@ def dashboard():
         </div>
       </div>
       <div class="col-lg-5">
-        <div class="card p-4 h-100" style="background: rgba(30, 41, 59, 0.35); border: 1px solid var(--border);">
+        <div class="card p-4 h-100">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h6 class="mb-0 fw-bold" style="color: var(--heading);"><i class="fa fa-chart-line me-2 text-warning"></i> Sarf Malzeme & Zimmet Tüketim Analizi</h6>
             <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Aylık Trend</span>
@@ -2633,6 +2633,9 @@ def dashboard():
         .then(r => r.json())
         .then(data => {{
           if(!data.ok) return;
+
+          const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || "#64748b";
+          const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || "rgba(0,0,0,0.08)";
           
           // Chart 1: Units
           const ctx1 = document.getElementById("chartUnits");
@@ -2652,11 +2655,11 @@ def dashboard():
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {{
-                  x: {{ stacked: true, grid: {{ display: false }}, ticks: {{ color: "#94a3b8", font: {{ size: 10 }} }} }},
-                  y: {{ stacked: true, grid: {{ color: "rgba(255,255,255,0.05)" }}, ticks: {{ color: "#94a3b8" }} }}
+                  x: {{ stacked: true, grid: {{ display: false }}, ticks: {{ color: textColor, font: {{ size: 10, weight: "bold" }} }} }},
+                  y: {{ stacked: true, grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }}
                 }},
                 plugins: {{
-                  legend: {{ labels: {{ color: "#e2e8f0", font: {{ size: 11 }} }} }}
+                  legend: {{ labels: {{ color: textColor, font: {{ size: 11, weight: "bold" }} }} }}
                 }}
               }}
             }});
@@ -2684,11 +2687,11 @@ def dashboard():
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {{
-                  x: {{ grid: {{ display: false }}, ticks: {{ color: "#94a3b8" }} }},
-                  y: {{ grid: {{ color: "rgba(255,255,255,0.05)" }}, ticks: {{ color: "#94a3b8" }} }}
+                  x: {{ grid: {{ display: false }}, ticks: {{ color: textColor, font: {{ weight: "bold" }} }} }},
+                  y: {{ grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }}
                 }},
                 plugins: {{
-                  legend: {{ labels: {{ color: "#e2e8f0", font: {{ size: 11 }} }} }}
+                  legend: {{ labels: {{ color: textColor, font: {{ size: 11, weight: "bold" }} }} }}
                 }}
               }}
             }});
@@ -5203,11 +5206,11 @@ def daire_incele():
         """
 
     content = f"""
-    <div class="card p-4 mb-3" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.4) 100%); border: 1px solid rgba(245, 158, 11, 0.25);">
+    <div class="card p-4 mb-3">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
           <h3 class="mb-0 fw-bold"><i class="fa fa-building text-warning me-2"></i> Daire & Birim Bazlı İnceleme Paneli</h3>
-          <div class="label mt-1" style="color: #fde68a;">Diyarbakır BAM bünyesindeki birimlerin aktif zimmetli tüm donanım ve personel haritası.</div>
+          <div class="label mt-1" style="color: var(--muted);">Diyarbakır BAM bünyesindeki birimlerin aktif zimmetli tüm donanım ve personel haritası.</div>
         </div>
         <a href="/admin/export/daire_toplu.pdf?unit={selected_unit}" class="btn btn-danger btn-lg fw-bold shadow-sm"><i class="fa fa-file-pdf me-2"></i> Toplu Zimmet Raporu (PDF) İndir</a>
       </div>
