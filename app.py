@@ -1197,11 +1197,11 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
     p.set_font(font, "B", 8.5)
     p.set_fill_color(30, 41, 59)
     p.set_text_color(255, 255, 255)
-    p.cell(10, 6.5, txt("No"), 1, 0, "C", fill=True)
-    p.cell(25, 6.5, txt("Kategori"), 1, 0, "C", fill=True)
-    p.cell(40, 6.5, txt("Marka / Model"), 1, 0, "C", fill=True)
+    p.cell(8, 6.5, txt("No"), 1, 0, "C", fill=True)
+    p.cell(22, 6.5, txt("Kategori"), 1, 0, "C", fill=True)
+    p.cell(55, 6.5, txt("Marka / Model"), 1, 0, "C", fill=True)
     p.cell(35, 6.5, txt("Seri Numarası"), 1, 0, "C", fill=True)
-    p.cell(80, 6.5, txt("Arıza / Hek Gerekçesi"), 1, 1, "C", fill=True)
+    p.cell(70, 6.5, txt("Arıza / Hek Gerekçesi"), 1, 1, "C", fill=True)
 
     p.set_font(font, "", 8)
     p.set_text_color(15, 23, 42)
@@ -1216,11 +1216,11 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
             ser = d.get("serial_no") or "-"
             reas = d.get("reason") or "Ekonomik Ömrü Dolmuş / Arızalı"
             
-            p.cell(10, 6, str(idx), 1, 0, "C", fill=fill)
-            p.cell(25, 6, clip_text(p, txt(cat), 23), 1, 0, "L", fill=fill)
-            p.cell(40, 6, clip_text(p, txt(brand_mdl), 38), 1, 0, "L", fill=fill)
+            p.cell(8, 6, str(idx), 1, 0, "C", fill=fill)
+            p.cell(22, 6, clip_text(p, txt(cat), 20), 1, 0, "L", fill=fill)
+            p.cell(55, 6, clip_text(p, txt(brand_mdl), 53), 1, 0, "L", fill=fill)
             p.cell(35, 6, clip_text(p, txt(ser), 33), 1, 0, "L", fill=fill)
-            p.cell(80, 6, clip_text(p, txt(reas), 78), 1, 1, "L", fill=fill)
+            p.cell(70, 6, clip_text(p, txt(reas), 68), 1, 1, "L", fill=fill)
 
     p.ln(4)
     p.set_font(font, "B", 9.5)
@@ -1989,10 +1989,22 @@ details summary {
     margin-left: 0 !important;
     padding: 16px !important;
     padding-top: 76px !important;
-    padding-bottom: 88px !important;
+    padding-bottom: 130px !important;
   }
   .bottom-nav { display: flex; }
   .footer-right { display: none; }
+  .theme-switcher-pill {
+    bottom: 74px !important;
+    right: 50% !important;
+    left: auto !important;
+    transform: translateX(50%) !important;
+    padding: 4px 8px !important;
+    gap: 4px !important;
+  }
+  .theme-btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
 }
 /* Yanıp sönen kırmızı nokta animasyonu */
 .pulse-red-dot {
@@ -3047,7 +3059,7 @@ def envanter():
         <h6><i class="fa fa-file-excel text-success me-2"></i>Toplu Excel İle Cihaz Yükle (.xlsx)</h6>
         <div>
           <a href="/admin/download_envanter_sablon" class="btn btn-sm btn-outline-success fw-bold me-2"><i class="fa fa-file-arrow-down me-1"></i> Örnek Şablon Excel İndir</a>
-          <a href="/admin/export/hek_tutanak.pdf" class="btn btn-sm btn-danger fw-bold"><i class="fa fa-file-pdf me-1"></i> Resmi Hek / Hurda Tutanağı (PDF) Üret</a>
+          <button type="button" class="btn btn-sm btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#hekPdfCustomModal"><i class="fa fa-file-pdf me-1"></i> Resmi Hek / Hurda Tutanağı (PDF) Üret</button>
         </div>
       </div>
       <div class="label mb-3">Sistem sütun başlıklarını (Kategori, Marka, Model, Seri No) otomatik algılar. Şablon Excel dosyasını indirip verilerinizi yapıştırabilirsiniz.</div>
@@ -3177,6 +3189,31 @@ def envanter():
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
             <button type="button" class="btn btn-danger fw-bold" onclick="submitBulkHurda()">Hek / Hurdaya Ayır</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hek PDF Özel Gerekçe Modalı -->
+    <div class="modal fade" id="hekPdfCustomModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background:var(--card); color:var(--heading); border:1px solid var(--border);">
+          <div class="modal-header border-bottom border-secondary-subtle">
+            <h5 class="modal-title fw-bold text-danger"><i class="fa fa-file-pdf me-2"></i>Resmi Hek / Hurda Tutanağı (PDF) Üret</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form method="get" action="/admin/export/hek_tutanak.pdf" target="_blank">
+            <div class="modal-body">
+              <p class="small text-muted mb-3">Tutanakta yer alan genel <strong>I. GEREKÇE VE TEKNİK DEĞERLENDİRME</strong> metnini isterseniz aşağıdan manuel olarak düzenleyebilir veya varsayılan resmi metni kullanabilirsiniz.</p>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Tutanak Gerekçe Açıklaması (Manuel Düzenlenebilir)</label>
+                <textarea name="gerekce_text" class="form-control" rows="4" style="font-size: 13px;">Diyarbakır Bölge Adliye Mahkemesi bünyesinde kullanılmakta iken arızalanan ve aşağıda marka, model ile seri numaraları belirtilen bilgi işlem donanımları, Bilgi İşlem Müdürlüğü teknik personellerince fiziki ve teknik incelemeye tabi tutulmuştur. Yapılan incelemeler neticesinde; söz konusu donanımların kullanım ömürlerini (ekonomik ömrünü) tamamladığı, tamir maliyetlerinin güncel donanım değerini aştığı / yedek parça temininin imkansız olduğu tespit edilmiş olup, kamu yararı ve tasarruf tedbirleri gözetilerek HEK (Kullanılamaz/Hurda) durumuna ayrılmasına karar verilmiştir.</textarea>
+              </div>
+            </div>
+            <div class="modal-footer border-top border-secondary-subtle">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+              <button type="submit" class="btn btn-danger fw-bold"><i class="fa fa-download me-1"></i> PDF Tutanağını İndir</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -5640,7 +5677,7 @@ def admin_export_daire_toplu_pdf():
         return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
 
 
-@app.route("/admin/export/hek_tutanak.pdf")
+@app.route("/admin/export/hek_tutanak.pdf", methods=["GET", "POST"])
 def admin_export_hek_tutanak_pdf():
     if not require_login():
         return redirect(url_for("login"))
