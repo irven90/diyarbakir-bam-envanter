@@ -2893,7 +2893,7 @@ def envanter():
                     raise ValueError("Geçersiz durum seçimi.")
                 old_st = it.status
                 it.status = new_st
-                it.last_event = f"Durum: {new_st}"
+                it.last_event = f"Durum: {new_st}"[:30]
                 it.last_event_at = now_str()
                 if new_st in ["Depoda", "Arızalı / Bakımda", "Hek / Hurda"]:
                     it.assigned_name = None
@@ -2913,14 +2913,14 @@ def envanter():
                 selected_ids = request.form.getlist("selected_ids")
                 gerekce = (request.form.get("bulk_reason") or "Ekonomik Ömrünü Tamamlamış / Arızalı").strip()
                 if not selected_ids:
-                    raise ValueError("Lütfen hurdaya ayrılacak en az bir cihaz seçin.")
+                    raise ValueError("Lütfen hurdaya ayrılacak en az bir cihaz seçin (sol baştaki kutucukları işaretleyin).")
                 
                 updated_count = 0
                 for item_id in selected_ids:
                     it = InventoryItem.query.get(int(item_id))
                     if it and it.status != "Hek / Hurda":
                         it.status = "Hek / Hurda"
-                        it.last_event = f"Hek / Hurda: {gerekce}"
+                        it.last_event = f"Hek: {gerekce}"[:30]
                         it.last_event_at = now_str()
                         it.assigned_name = None
                         it.assigned_sicil = None
@@ -2946,7 +2946,7 @@ def envanter():
                 if it.status != "Hek / Hurda":
                     raise ValueError("Cihaz zaten hurda durumunda değil.")
                 it.status = "Depoda"
-                it.last_event = "Hurda İptal Edildi -> Depoda"
+                it.last_event = "Hurda İptal -> Depoda"[:30]
                 it.last_event_at = now_str()
                 db.session.commit()
                 log_audit("HURDA_IPTAL", f"Cihaz #{it.id} ({it.serial_no}) hurda durumu iptal edildi -> Depoda")
