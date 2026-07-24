@@ -1359,6 +1359,7 @@ BASE_HTML = r"""<!doctype html>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root, html[data-theme="dark"] {
   --bg: #090d16;
@@ -1822,6 +1823,7 @@ details summary {
     <a class="navlink" href="/dashboard" id="s_dash"><i class="fa fa-chart-line"></i> Yönetim</a>
     <a class="navlink" href="/envanter" id="s_env"><i class="fa fa-desktop"></i> Envanter</a>
     <a class="navlink" href="/zimmet" id="s_zim"><i class="fa fa-file-signature"></i> Zimmet / Teslim</a>
+    <a class="navlink" href="/daire_incele" id="s_dai"><i class="fa fa-building text-warning"></i> Daire İnceleme</a>
     <a class="navlink" href="/depo" id="s_dep"><i class="fa fa-warehouse"></i> Depo</a>
     <a class="navlink" href="/gecmis" id="s_gec"><i class="fa fa-clock-rotate-left"></i> Geçmiş</a>
     {% if is_admin %}<a class="navlink" href="/ayarlar" id="s_set"><i class="fa fa-gear"></i> Ayarlar</a>{% endif %}
@@ -2410,6 +2412,102 @@ def dashboard():
       <div class="col-md-2 col-6"><div class="card p-3 text-center"><div class="label mb-1">Hek / Hurda</div><h5 class="mb-0 fw-bold text-danger">{hurda}</h5></div></div>
       <div class="col-md-2 col-6"><div class="card p-3 text-center"><div class="label mb-1">Depo Kalemi</div><h5 class="mb-0 fw-bold text-info">{stok}</h5></div></div>
     </div>
+
+    <!-- Chart.js Analiz Kartları -->
+    <div class="row g-3 my-1">
+      <div class="col-lg-7">
+        <div class="card p-4 h-100" style="background: rgba(30, 41, 59, 0.35); border: 1px solid var(--border);">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0 fw-bold" style="color: var(--heading);"><i class="fa fa-chart-bar me-2 text-primary"></i> Daire / Birim Bazlı Cihaz Dağılım Grafiği</h6>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Top Birimler</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chartUnits"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card p-4 h-100" style="background: rgba(30, 41, 59, 0.35); border: 1px solid var(--border);">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0 fw-bold" style="color: var(--heading);"><i class="fa fa-chart-line me-2 text-warning"></i> Sarf Malzeme & Zimmet Tüketim Analizi</h6>
+            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Aylık Trend</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chartMonthly"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function(){{
+      fetch("/api/analytics")
+        .then(r => r.json())
+        .then(data => {{
+          if(!data.ok) return;
+          
+          // Chart 1: Units
+          const ctx1 = document.getElementById("chartUnits");
+          if(ctx1) {{
+            new Chart(ctx1.getContext("2d"), {{
+              type: "bar",
+              data: {{
+                labels: data.units.labels,
+                datasets: [
+                  {{ label: "Kasa", data: data.units.kasa, backgroundColor: "#6366f1", borderRadius: 4 }},
+                  {{ label: "Monitör", data: data.units.monitor, backgroundColor: "#3b82f6", borderRadius: 4 }},
+                  {{ label: "Yazıcı", data: data.units.yazici, backgroundColor: "#f59e0b", borderRadius: 4 }},
+                  {{ label: "Tarayıcı", data: data.units.tarayici, backgroundColor: "#10b981", borderRadius: 4 }}
+                ]
+              }},
+              options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {{
+                  x: {{ stacked: true, grid: {{ display: false }}, ticks: {{ color: "#94a3b8", font: {{ size: 10 }} }} }},
+                  y: {{ stacked: true, grid: {{ color: "rgba(255,255,255,0.05)" }}, ticks: {{ color: "#94a3b8" }} }}
+                }},
+                plugins: {{
+                  legend: {{ labels: {{ color: "#e2e8f0", font: {{ size: 11 }} }} }}
+                }}
+              }}
+            }});
+          }}
+
+          // Chart 2: Monthly
+          const ctx2 = document.getElementById("chartMonthly");
+          if(ctx2) {{
+            new Chart(ctx2.getContext("2d"), {{
+              type: "line",
+              data: {{
+                labels: data.monthly.labels,
+                datasets: [{{
+                  label: "Aylık İşlem Hacmi",
+                  data: data.monthly.data,
+                  borderColor: "#f97316",
+                  backgroundColor: "rgba(249, 115, 22, 0.15)",
+                  fill: true,
+                  tension: 0.4,
+                  pointRadius: 4,
+                  pointBackgroundColor: "#ec4899"
+                }}]
+              }},
+              options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {{
+                  x: {{ grid: {{ display: false }}, ticks: {{ color: "#94a3b8" }} }},
+                  y: {{ grid: {{ color: "rgba(255,255,255,0.05)" }}, ticks: {{ color: "#94a3b8" }} }}
+                }},
+                plugins: {{
+                  legend: {{ labels: {{ color: "#e2e8f0", font: {{ size: 11 }} }} }}
+                }}
+              }}
+            }});
+          }}
+        }});
+    }});
+    </script>
 
     {daire_cards_html}
     """
@@ -4819,6 +4917,239 @@ def admin_export_depo_pdf():
         return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name="depo_stok_raporu.pdf")
     except Exception as e:
         return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
+
+# =========================================================
+# YENİ MODÜLLER: ANALİTİK, DAİRE İNCELEME & OTOMATİK YEDEKLEME
+# =========================================================
+
+@app.route("/api/analytics")
+def api_analytics():
+    if not require_login():
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+    try:
+        # 1. Daire Bazlı Cihaz Dağılımı (Zimmetli olanlar)
+        items = InventoryItem.query.filter_by(status="Zimmetli").all()
+        unit_map = {}
+        for it in items:
+            u = (it.assigned_unit or "Belirtilmemiş").strip()
+            c = (it.category or "Diğer").strip()
+            if u not in unit_map:
+                unit_map[u] = {"Kasa": 0, "Monitör": 0, "Yazıcı": 0, "Tarayıcı": 0}
+            if c in unit_map[u]:
+                unit_map[u][c] += 1
+            else:
+                unit_map[u]["Kasa"] += 1
+
+        sorted_units = sorted(unit_map.items(), key=lambda x: sum(x[1].values()), reverse=True)[:8]
+        u_labels = [x[0] for x in sorted_units]
+        kasa = [x[1].get("Kasa", 0) for x in sorted_units]
+        mon = [x[1].get("Monitör", 0) for x in sorted_units]
+        yaz = [x[1].get("Yazıcı", 0) for x in sorted_units]
+        tar = [x[1].get("Tarayıcı", 0) for x in sorted_units]
+
+        # 2. Aylık İşlem / Sarf Tüketim Hacmi
+        hist_items = History.query.all()
+        m_map = {}
+        for h in hist_items:
+            try:
+                m = datetime.strptime(h.at, "%d.%m.%Y %H:%M:%S").strftime("%Y-%m")
+            except Exception:
+                continue
+            m_map[m] = m_map.get(m, 0) + 1
+        
+        m_labels = sorted(m_map.keys())[-6:] if m_map else [datetime.now().strftime("%Y-%m")]
+        m_data = [m_map.get(m, 0) for m in m_labels]
+
+        return jsonify({
+            "ok": True,
+            "units": {"labels": u_labels, "kasa": kasa, "monitor": mon, "yazici": yaz, "tarayici": tar},
+            "monthly": {"labels": m_labels, "data": m_data}
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/daire_incele")
+def daire_incele():
+    if not require_login():
+        return redirect(url_for("login"))
+    
+    selected_unit = request.args.get("unit") or "1. Ceza Dairesi"
+    
+    # Birim Seçim Listesi (HTML Optgroup)
+    daire_options = ""
+    for g_name, u_list in BAM_UNITS_STRUCTURE.items():
+        daire_options += f'<optgroup label="{g_name}">'
+        for u in u_list:
+            sel = "selected" if u.strip().lower() == selected_unit.strip().lower() else ""
+            daire_options += f'<option value="{u}" {sel}>{u}</option>'
+        daire_options += '</optgroup>'
+
+    # Seçilen birime ait zimmetli cihazlar
+    all_invs = InventoryItem.query.all()
+    items = [it for it in all_invs if (it.assigned_unit and selected_unit.strip().lower() in it.assigned_unit.strip().lower() and it.status == "Zimmetli")]
+    
+    personnel_set = set()
+    cat_counts = {"Kasa": 0, "Monitör": 0, "Yazıcı": 0, "Tarayıcı": 0}
+    for it in items:
+        if it.assigned_name:
+            personnel_set.add(it.assigned_name)
+        if it.category in cat_counts:
+            cat_counts[it.category] += 1
+
+    table_rows = ""
+    for idx, it in enumerate(items, 1):
+        badge_cls = "bg-primary" if it.category == "Kasa" else ("bg-info text-dark" if it.category == "Monitör" else ("bg-warning text-dark" if it.category == "Yazıcı" else "bg-success"))
+        table_rows += f"""
+        <tr>
+          <td class="text-center fw-bold">{idx}</td>
+          <td><span class="badge {badge_cls} px-2 py-1">{it.category}</span></td>
+          <td><strong style="color:var(--heading);">{it.brand}</strong> <span class="muted">{it.model or ''}</span></td>
+          <td><code>{it.serial_no}</code></td>
+          <td><strong style="color:var(--primary);">{it.assigned_name or '-'}</strong> <small class="muted">({it.assigned_sicil or ''})</small></td>
+          <td>{it.assigned_at or '-'}</td>
+        </tr>
+        """
+
+    content = f"""
+    <div class="card p-4 mb-3" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.4) 100%); border: 1px solid rgba(245, 158, 11, 0.25);">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <h3 class="mb-0 fw-bold"><i class="fa fa-building text-warning me-2"></i> Daire & Birim Bazlı İnceleme Paneli</h3>
+          <div class="label mt-1" style="color: #fde68a;">Diyarbakır BAM bünyesindeki birimlerin aktif zimmetli tüm donanım ve personel haritası.</div>
+        </div>
+        <a href="/admin/export/daire_toplu.pdf?unit={selected_unit}" class="btn btn-danger btn-lg fw-bold shadow-sm"><i class="fa fa-file-pdf me-2"></i> Toplu Zimmet Raporu (PDF) İndir</a>
+      </div>
+    </div>
+
+    <div class="card p-4 mb-3">
+      <form method="get" action="/daire_incele" class="row g-3 align-items-center">
+        <div class="col-md-9">
+          <label class="label mb-1 fw-bold" style="color: var(--heading);">İncelenecek Daire / İdari Büro Seçin</label>
+          <select name="unit" class="form-select form-select-lg fw-bold" style="background: var(--input-bg); color: var(--input-text);" onchange="this.form.submit()">
+            {daire_options}
+          </select>
+        </div>
+        <div class="col-md-3 text-end pt-4">
+          <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold"><i class="fa fa-filter me-1"></i> Detayları Getir</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-3 col-6"><div class="card p-3 text-center"><div class="label mb-1">Birimdeki Zimmetli Cihaz</div><h4 class="mb-0 fw-bold text-warning">{len(items)}</h4></div></div>
+      <div class="col-md-3 col-6"><div class="card p-3 text-center"><div class="label mb-1">Zimmetli Personel Sayısı</div><h4 class="mb-0 fw-bold text-primary">{len(personnel_set)}</h4></div></div>
+      <div class="col-md-3 col-6"><div class="card p-3 text-center"><div class="label mb-1">Kasa / Monitör</div><h4 class="mb-0 fw-bold text-info">{cat_counts['Kasa']} / {cat_counts['Monitör']}</h4></div></div>
+      <div class="col-md-3 col-6"><div class="card p-3 text-center"><div class="label mb-1">Yazıcı / Tarayıcı</div><h4 class="mb-0 fw-bold text-success">{cat_counts['Yazıcı']} / {cat_counts['Tarayıcı']}</h4></div></div>
+    </div>
+
+    <div class="card p-4">
+      <h5 class="fw-bold mb-3" style="color: var(--heading);"><i class="fa fa-list me-2 text-warning"></i> {selected_unit} Zimmetli Donanım Listesi</h5>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th class="text-center" style="width:50px">#</th>
+              <th>Kategori</th>
+              <th>Marka / Model</th>
+              <th>Seri Numarası</th>
+              <th>Kullanan Personel (Sicil)</th>
+              <th>Zimmet Tarihi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {table_rows or '<tr><td colspan="6" class="text-center muted py-4"><i class="fa fa-info-circle me-1"></i> Bu dairede zimmetli aktif cihaz bulunmamaktadır.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    """
+    return render_base(content)
+
+
+@app.route("/admin/export/daire_toplu.pdf")
+def admin_export_daire_toplu_pdf():
+    if not require_login():
+        return redirect(url_for("login"))
+    unit = request.args.get("unit") or "1. Ceza Dairesi"
+    try:
+        pdf = build_daire_envanter_defteri_pdf(unit)
+        buf = io.BytesIO(pdf)
+        buf.seek(0)
+        safe_unit_name = re.sub(r'[^a-zA-Z0-9]', '_', unit).strip('_')
+        return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=f"{safe_unit_name}_toplu_zimmet_raporu.pdf")
+    except Exception as e:
+        return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
+
+
+def send_db_backup_email(to_email=None) -> Tuple[bool, str]:
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.base import MIMEBase
+    from email.mime.text import MIMEText
+    from email import encoders
+
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", 587))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
+    target_email = to_email or os.environ.get("BACKUP_EMAIL", "irven90@gmail.com")
+
+    if not smtp_user or not smtp_pass:
+        return False, "SMTP e-posta sunucusu veya şifresi ortam değişkenlerinde tanımlanmamış (SMTP_USER / SMTP_PASS)."
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = target_email
+        msg['Subject'] = f"Diyarbakır BAM Envanter - Otomatik Veritabanı Yedeği ({today_str()})"
+
+        body = f"""Sayın Murat İRVEN,
+
+Diyarbakır Bölge Adliye Mahkemesi Envanter ve Zimmet Sistemi otomatik veritabanı yedeği ekte yer almaktadır.
+
+Tarih: {now_str()}
+Sistem: Diyarbakır BAM Bilgi İşlem Müdürlüğü
+"""
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+        if os.path.exists(DB_PATH):
+            with open(DB_PATH, "rb") as f:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(f.read())
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename=Diyarbakir_BAM_Zimmet_Yedek_{today_str()}.db")
+            msg.attach(part)
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        return True, f"Veritabanı yedeği başarıyla {target_email} adresine e-posta olarak gönderildi."
+    except Exception as e:
+        return False, f"E-Posta gönderim hatası: {e}"
+
+
+@app.route("/admin/send_db_backup")
+def admin_send_db_backup():
+    if not require_login() or not is_admin():
+        return redirect(url_for("login"))
+    ok, msg = send_db_backup_email()
+    alert_cls = "alert-success" if ok else "alert-warning"
+    return render_template_string(
+        BASE_HTML,
+        content=f"""
+        <div class="card p-4">
+          <h4 class="fw-bold mb-3"><i class="fa fa-envelope-open-text text-info me-2"></i> Otomatik Veritabanı Yedek E-Postası</h4>
+          <div class="alert {alert_cls}">{msg}</div>
+          <div class="mt-3">
+            <a href="/ayarlar" class="btn btn-primary fw-bold"><i class="fa fa-arrow-left me-1"></i> Ayarlar Paneline Dön</a>
+          </div>
+        </div>
+        """,
+        is_admin=is_admin()
+    )
 
 
 with app.app_context():
