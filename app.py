@@ -2147,11 +2147,12 @@ function setAppTheme(t) {
   const root = document.documentElement;
   
   const map = [
-    {re:/^\/envanter/, accent:"#10b981", s_id:"s_env", b_id:"b_env"},
-    {re:/^\/zimmet/, accent:"#06b6d4", s_id:"s_zim", b_id:"b_zim"},
-    {re:/^\/depo/, accent:"#f59e0b", s_id:"s_dep", b_id:"b_dep"},
-    {re:/^\/gecmis/, accent:"#ec4899", s_id:"s_gec", b_id:"b_gec"},
-    {re:/^\/ayarlar/, accent:"#8b5cf6", s_id:"s_set", b_id:""},
+    {re:/^\/daire_incele/, accent:"#f59e0b", s_id:"s_dai", b_id:""},
+    {re:/^\/envanter/, accent:"#3b82f6", s_id:"s_env", b_id:"b_env"},
+    {re:/^\/zimmet/, accent:"#10b981", s_id:"s_zim", b_id:"b_zim"},
+    {re:/^\/depo/, accent:"#06b6d4", s_id:"s_dep", b_id:"b_dep"},
+    {re:/^\/gecmis/, accent:"#8b5cf6", s_id:"s_gec", b_id:"b_gec"},
+    {re:/^\/ayarlar/, accent:"#ec4899", s_id:"s_set", b_id:""},
     {re:/^\/dashboard/, accent:"#6366f1", s_id:"s_dash", b_id:"b_dash"},
     {re:/^\//, accent:"#6366f1", s_id:"s_dash", b_id:"b_dash"},
   ];
