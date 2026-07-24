@@ -3238,13 +3238,23 @@ def envanter():
           tr.style.display = "";
         }} else {{
           tr.style.display = "none";
+          const cb = tr.querySelector(".item-checkbox");
+          if (cb) cb.checked = false;
         }}
       }});
+
+      const master = document.getElementById("checkAllItems");
+      if (master) master.checked = false;
     }}
 
     function toggleSelectAllItems(master) {{
-      document.querySelectorAll(".item-checkbox").forEach(cb => {{
-        if (!cb.disabled) cb.checked = master.checked;
+      document.querySelectorAll("#envanterMainTable tbody tr").forEach(tr => {{
+        if (tr.style.display !== "none") {{
+          const cb = tr.querySelector(".item-checkbox");
+          if (cb && !cb.disabled) {{
+            cb.checked = master.checked;
+          }}
+        }}
       }});
     }}
 
