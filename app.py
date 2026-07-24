@@ -49,6 +49,7 @@ USERS = [
     ("Murat İRVEN", "187665", "Adalet21"),
     ("Arda EKER", "327360", "Adalet21"),
     ("Ahmet AYDIN", "187696", "Adalet21"),
+    ("Necip Fazıl EKER", "86537", "Adalet21"),
 ]
 
 ADMIN_SICIL = "187665"  # admin sicil
@@ -1252,17 +1253,17 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
     p.set_xy(x1, y_sig)
     p.cell(col_w, 5, txt("İnceleyen Teknik Personel"), align="C")
     p.set_xy(x2, y_sig)
-    p.cell(col_w, 5, txt("Bilgi İşlem Müdürü"), align="C")
+    p.cell(col_w, 5, txt("Bilgi İşlem Şefi"), align="C")
     p.set_xy(x3, y_sig)
     p.cell(col_w, 5, txt("İdari İşler Müdürü"), align="C")
 
     p.set_font(font, "", 8)
     p.set_xy(x1, y_sig + 5)
-    p.cell(col_w, 4, txt("Arda EKER (327360)"), align="C")
-    p.set_xy(x2, y_sig + 5)
     p.cell(col_w, 4, txt("Murat İRVEN (187665)"), align="C")
-    p.set_xy(x3, y_sig + 5)
+    p.set_xy(x2, y_sig + 5)
     p.cell(col_w, 4, txt("Ahmet AYDIN (187696)"), align="C")
+    p.set_xy(x3, y_sig + 5)
+    p.cell(col_w, 4, txt("Necip Fazıl EKER (86537)"), align="C")
 
     y_line = y_sig + 16
     p.set_draw_color(30, 41, 59)
