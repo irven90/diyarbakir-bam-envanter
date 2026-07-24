@@ -1620,23 +1620,28 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
   font-weight: 600;
   font-size: 13.5px;
-  transition: all 0.15s ease;
-  margin-bottom: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 3px;
 }
 .navlink:hover {
-  background: rgba(99, 102, 241, 0.08);
-  color: var(--accent);
-  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--heading) !important;
+  transform: translateX(4px);
 }
 .navlink.active {
-  background: var(--accent);
-  color: #fff !important;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35) !important;
+  font-weight: 800;
 }
 .navlink i {
-  font-size: 15px;
-  width: 20px;
+  font-size: 16px;
+  width: 22px;
   text-align: center;
+  transition: transform 0.2s ease;
+}
+.navlink:hover i {
+  transform: scale(1.15);
 }
 
 /* --- Content --- */
@@ -1953,20 +1958,20 @@ details summary {
     </div>
   </div>
   <div class="d-flex flex-column gap-1">
-    <a class="navlink" href="/dashboard" id="s_dash"><i class="fa fa-chart-line"></i> Yönetim</a>
-    <a class="navlink" href="/envanter" id="s_env"><i class="fa fa-desktop"></i> Envanter</a>
-    <a class="navlink" href="/zimmet" id="s_zim"><i class="fa fa-file-signature"></i> Zimmet / Teslim</a>
-    <a class="navlink" href="/daire_incele" id="s_dai"><i class="fa fa-building text-warning"></i> Daire İnceleme</a>
-    <a class="navlink" href="/depo" id="s_dep"><i class="fa fa-warehouse"></i> Depo</a>
-    <a class="navlink" href="/gecmis" id="s_gec"><i class="fa fa-clock-rotate-left"></i> Geçmiş</a>
-    {% if is_admin %}<a class="navlink" href="/ayarlar" id="s_set"><i class="fa fa-gear"></i> Ayarlar</a>{% endif %}
+    <a class="navlink" href="/dashboard" id="s_dash"><i class="fa-solid fa-chart-pie"></i> Yönetim</a>
+    <a class="navlink" href="/envanter" id="s_env"><i class="fa-solid fa-boxes-stacked"></i> Envanter</a>
+    <a class="navlink" href="/zimmet" id="s_zim"><i class="fa-solid fa-file-contract"></i> Zimmet / Teslim</a>
+    <a class="navlink" href="/daire_incele" id="s_dai"><i class="fa-solid fa-building-user"></i> Daire İnceleme</a>
+    <a class="navlink" href="/depo" id="s_dep"><i class="fa-solid fa-warehouse"></i> Depo</a>
+    <a class="navlink" href="/gecmis" id="s_gec"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş</a>
+    {% if is_admin %}<a class="navlink" href="/ayarlar" id="s_set"><i class="fa-solid fa-sliders"></i> Ayarlar</a>{% endif %}
     {% if (request.path == '/dashboard' or request.path == '/') and critical_count and critical_count > 0 %}
-    <button type="button" onclick="onCriticalBellClick()" class="btn btn-sm btn-outline-danger w-100 mt-2 fw-bold text-start d-flex align-items-center justify-content-between py-2 px-3" style="border-radius: 12px; font-size: 13px;" data-bs-toggle="modal" data-bs-target="#criticalStockModal">
+    <button type="button" onclick="onCriticalBellClick()" class="btn btn-sm w-100 mt-2 fw-bold text-start d-flex align-items-center justify-content-between py-2 px-3" style="border-radius: 12px; font-size: 12.5px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35) !important; color: #fca5a5; backdrop-filter: blur(8px);" data-bs-toggle="modal" data-bs-target="#criticalStockModal">
       <span><span id="critical_bell_dot" class="pulse-red-dot me-2"></span>Kritik Stok Uyarısı</span>
-      <span class="badge bg-danger rounded-pill">{{ critical_count }}</span>
+      <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 11px;">{{ critical_count }}</span>
     </button>
     {% endif %}
-    <a class="navlink mt-2" href="/logout"><i class="fa fa-sign-out-alt"></i> Çıkış</a>
+    <a class="navlink mt-2" href="/logout" style="color: #fca5a5;"><i class="fa-solid fa-right-from-bracket" style="color: #fca5a5;"></i> Çıkış</a>
   </div>
   <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; font-weight: 700; opacity: 0.8;">
     By Murat İRVEN (187665)
