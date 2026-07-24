@@ -1482,6 +1482,7 @@ threading.Thread(target=auto_scheduled_backup_loop, daemon=True).start()
 BASE_HTML = r"""<!doctype html>
 <html lang="tr" data-theme="dark">
 <head>
+<script>(function(){ try { const saved = localStorage.getItem('zimmet_theme') || 'dark'; document.documentElement.setAttribute('data-theme', saved); } catch(e){} })();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Diyarbakır Bölge Adliye Mahkemesi Envanter Sistemi</title>
@@ -2137,6 +2138,7 @@ function setAppTheme(t) {
   document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
   const activeBtn = document.getElementById('tb_' + t);
   if(activeBtn) activeBtn.classList.add('active');
+  window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: t } }));
 }
 
 (function(){
@@ -2628,19 +2630,26 @@ def dashboard():
     </div>
 
     <script>
+    function getChartThemeColors() {{
+      const t = document.documentElement.getAttribute('data-theme') || 'dark';
+      if (t === 'light') {{
+        return {{ text: '#0f172a', grid: 'rgba(15, 23, 42, 0.15)' }};
+      }}
+      return {{ text: '#f8fafc', grid: 'rgba(255, 255, 255, 0.15)' }};
+    }}
+
     document.addEventListener("DOMContentLoaded", function(){{
       fetch("/api/analytics")
         .then(r => r.json())
         .then(data => {{
           if(!data.ok) return;
 
-          const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || "#64748b";
-          const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || "rgba(0,0,0,0.08)";
+          const colors = getChartThemeColors();
           
           // Chart 1: Units
           const ctx1 = document.getElementById("chartUnits");
           if(ctx1) {{
-            new Chart(ctx1.getContext("2d"), {{
+            window.chartUnitsInst = new Chart(ctx1.getContext("2d"), {{
               type: "bar",
               data: {{
                 labels: data.units.labels,
@@ -2655,11 +2664,11 @@ def dashboard():
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {{
-                  x: {{ stacked: true, grid: {{ display: false }}, ticks: {{ color: textColor, font: {{ size: 10, weight: "bold" }} }} }},
-                  y: {{ stacked: true, grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }}
+                  x: {{ stacked: true, grid: {{ display: false }}, ticks: {{ color: colors.text, font: {{ size: 11, weight: "bold" }} }} }},
+                  y: {{ stacked: true, grid: {{ color: colors.grid }}, ticks: {{ color: colors.text, font: {{ weight: "bold" }} }} }}
                 }},
                 plugins: {{
-                  legend: {{ labels: {{ color: textColor, font: {{ size: 11, weight: "bold" }} }} }}
+                  legend: {{ labels: {{ color: colors.text, font: {{ size: 12, weight: "bold" }} }} }}
                 }}
               }}
             }});
@@ -2668,7 +2677,7 @@ def dashboard():
           // Chart 2: Monthly
           const ctx2 = document.getElementById("chartMonthly");
           if(ctx2) {{
-            new Chart(ctx2.getContext("2d"), {{
+            window.chartMonthlyInst = new Chart(ctx2.getContext("2d"), {{
               type: "line",
               data: {{
                 labels: data.monthly.labels,
@@ -2687,16 +2696,29 @@ def dashboard():
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {{
-                  x: {{ grid: {{ display: false }}, ticks: {{ color: textColor, font: {{ weight: "bold" }} }} }},
-                  y: {{ grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }}
+                  x: {{ grid: {{ display: false }}, ticks: {{ color: colors.text, font: {{ weight: "bold" }} }} }},
+                  y: {{ grid: {{ color: colors.grid }}, ticks: {{ color: colors.text, font: {{ weight: "bold" }} }} }}
                 }},
                 plugins: {{
-                  legend: {{ labels: {{ color: textColor, font: {{ size: 11, weight: "bold" }} }} }}
+                  legend: {{ labels: {{ color: colors.text, font: {{ size: 12, weight: "bold" }} }} }}
                 }}
               }}
             }});
           }}
         }});
+
+      window.addEventListener("themeChanged", function() {{
+        const c = getChartThemeColors();
+        [window.chartUnitsInst, window.chartMonthlyInst].forEach(inst => {{
+          if(inst) {{
+            inst.options.scales.x.ticks.color = c.text;
+            inst.options.scales.y.ticks.color = c.text;
+            if(inst.options.scales.y.grid) inst.options.scales.y.grid.color = c.grid;
+            inst.options.plugins.legend.labels.color = c.text;
+            inst.update();
+          }}
+        }});
+      }});
     }});
     </script>
 
