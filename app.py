@@ -1173,11 +1173,9 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
     p.ln(6)
 
     t_tarih = tutanak_tarihi or today_str()
-    t_no = tutanak_no or f"{datetime.now().strftime('%Y')} / HEK-001"
     p.set_font(font, "B", 9)
     p.set_text_color(15, 23, 42)
-    p.cell(95, 5, txt(f"Tutanak Tarihi: {t_tarih}"), 0, 0, "L")
-    p.cell(95, 5, txt(f"Tutanak No: {t_no}"), 0, 1, "R")
+    p.cell(0, 5, txt(f"Tutanak Tarihi: {t_tarih}"), 0, 1, "R")
     p.ln(2)
 
     p.set_font(font, "B", 10)
