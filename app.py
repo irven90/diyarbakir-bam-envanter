@@ -1270,6 +1270,230 @@ def build_hek_hurda_pdf(devices: List[Dict], tutanak_no: str = "", tutanak_tarih
     return out if isinstance(out, (bytes, bytearray)) else out.encode("latin-1", errors="ignore")
 
 
+def build_yonetici_ozet_pdf() -> bytes:
+    p = FPDF("P", "mm", "A4")
+    p.set_auto_page_break(auto=True, margin=10)
+    p.add_page()
+    font, unicode_ok = pdf_font_setup(p)
+    txt = lambda x: safe_text(x, unicode_ok)
+
+    if os.path.exists(LOGO_PATH):
+        p.image(LOGO_PATH, x=14, y=10, w=22, h=22)
+        p.image(LOGO_PATH, x=174, y=10, w=22, h=22)
+
+    p.set_xy(10, 10)
+    p.set_text_color(15, 23, 42)
+    p.set_font(font, "B", 11)
+    p.cell(0, 5, txt("T.C."), ln=1, align="C")
+    p.set_font(font, "B", 13)
+    p.cell(0, 6, txt("DİYARBAKIR BÖLGE ADLİYE MAHKEMESİ BAŞKANLIĞI"), ln=1, align="C")
+    p.set_font(font, "B", 10.5)
+    p.set_text_color(51, 65, 85)
+    p.cell(0, 5, txt("Adalet Komisyonu Başkanlığı / Bilgi İşlem Müdürlüğü"), ln=1, align="C")
+
+    p.ln(3)
+    p.set_text_color(15, 23, 42)
+    p.set_font(font, "B", 13)
+    p.cell(0, 7, txt("DONANIM VARLIĞI VE ENVANTER YÖNETİCİ ÖZET RAPORU"), ln=1, align="C")
+    p.set_draw_color(30, 41, 59)
+    p.set_line_width(0.8)
+    p.line(30, p.get_y() + 1, 180, p.get_y() + 1)
+    p.ln(6)
+
+    p.set_font(font, "", 8.5)
+    p.set_text_color(71, 85, 105)
+    p.cell(95, 5, txt(f"Rapor Tarihi: {datetime.now().strftime('%d.%m.%Y %H:%M')}"), 0, 0, "L")
+    p.cell(95, 5, txt("Dönem: 2026 Yılı Genel Envanter Durumu"), 0, 1, "R")
+    p.ln(2)
+
+    items = InventoryItem.query.all()
+    cnt_total = len(items)
+    cnt_depo = sum(1 for x in items if x.status == "Depoda")
+    cnt_zimmet = sum(1 for x in items if x.status == "Zimmetli")
+    cnt_ariza = sum(1 for x in items if x.status == "Arızalı / Bakımda")
+    cnt_hurda = sum(1 for x in items if x.status == "Hek / Hurda")
+
+    pct_depo = (cnt_depo / cnt_total * 100) if cnt_total else 0
+    pct_zimmet = (cnt_zimmet / cnt_total * 100) if cnt_total else 0
+    pct_ariza = (cnt_ariza / cnt_total * 100) if cnt_total else 0
+    pct_hurda = (cnt_hurda / cnt_total * 100) if cnt_total else 0
+
+    box_w = 36
+    box_h = 18
+    start_x = 10
+    curr_y = p.get_y()
+
+    stats_cards = [
+        ("TOPLAM VARLIK", str(cnt_total), "%100 Genel", (30, 41, 59), (241, 245, 249)),
+        ("DEPODA (BOŞTA)", str(cnt_depo), f"%{pct_depo:.1f}", (16, 185, 129), (236, 253, 245)),
+        ("ZİMMETLİ", str(cnt_zimmet), f"%{pct_zimmet:.1f}", (59, 130, 246), (239, 246, 255)),
+        ("ARIZALI", str(cnt_ariza), f"%{pct_ariza:.1f}", (245, 158, 11), (255, 251, 235)),
+        ("HEK / HURDA", str(cnt_hurda), f"%{pct_hurda:.1f}", (239, 68, 68), (254, 242, 242)),
+    ]
+
+    for idx, (title, num, sub, border_c, bg_c) in enumerate(stats_cards):
+        bx = start_x + idx * 39.2
+        p.set_fill_color(*bg_c)
+        p.set_draw_color(*border_c)
+        p.set_line_width(0.4)
+        p.rect(bx, curr_y, box_w, box_h, style="FD")
+
+        p.set_xy(bx, curr_y + 1.5)
+        p.set_font(font, "B", 6.5)
+        p.set_text_color(*border_c)
+        p.cell(box_w, 4, txt(title), 0, 1, "C")
+
+        p.set_xy(bx, curr_y + 5)
+        p.set_font(font, "B", 12)
+        p.set_text_color(15, 23, 42)
+        p.cell(box_w, 6, txt(num), 0, 1, "C")
+
+        p.set_xy(bx, curr_y + 11.5)
+        p.set_font(font, "", 7)
+        p.set_text_color(100, 116, 139)
+        p.cell(box_w, 4, txt(sub), 0, 1, "C")
+
+    p.set_y(curr_y + box_h + 6)
+
+    p.set_font(font, "B", 9.5)
+    p.set_text_color(15, 23, 42)
+    p.cell(0, 5, txt("I. KATEGORİ BAZLI DONANIM VE STOK DAĞILIMI"), ln=1)
+    
+    p.set_font(font, "B", 8)
+    p.set_fill_color(30, 41, 59)
+    p.set_text_color(255, 255, 255)
+    p.cell(45, 6, txt("Cihaz Kategorisi"), 1, 0, "C", fill=True)
+    p.cell(30, 6, txt("Toplam Adet"), 1, 0, "C", fill=True)
+    p.cell(30, 6, txt("Zimmetli"), 1, 0, "C", fill=True)
+    p.cell(30, 6, txt("Depoda"), 1, 0, "C", fill=True)
+    p.cell(25, 6, txt("Arızalı / Hurda"), 1, 0, "C", fill=True)
+    p.cell(30, 6, txt("Varlık Oranı (%)"), 1, 1, "C", fill=True)
+
+    cat_counts = {}
+    for c in DEVICE_CATEGORIES:
+        c_items = [x for x in items if x.category == c]
+        cat_counts[c] = {
+            "total": len(c_items),
+            "zimmet": sum(1 for x in c_items if x.status == "Zimmetli"),
+            "depo": sum(1 for x in c_items if x.status == "Depoda"),
+            "other": sum(1 for x in c_items if x.status in ["Arızalı / Bakımda", "Hek / Hurda"]),
+            "ratio": (len(c_items) / cnt_total * 100) if cnt_total else 0
+        }
+
+    p.set_font(font, "", 8)
+    p.set_text_color(15, 23, 42)
+    for idx, (cat_name, data) in enumerate(cat_counts.items(), 1):
+        fill = idx % 2 == 0
+        p.set_fill_color(248, 250, 252) if fill else p.set_fill_color(255, 255, 255)
+        p.cell(45, 5.5, txt(cat_name), 1, 0, "L", fill=fill)
+        p.cell(30, 5.5, str(data["total"]), 1, 0, "C", fill=fill)
+        p.cell(30, 5.5, str(data["zimmet"]), 1, 0, "C", fill=fill)
+        p.cell(30, 5.5, str(data["depo"]), 1, 0, "C", fill=fill)
+        p.cell(25, 5.5, str(data["other"]), 1, 0, "C", fill=fill)
+        p.cell(30, 5.5, f"%{data['ratio']:.1f}", 1, 1, "C", fill=fill)
+
+    p.ln(4)
+
+    p.set_font(font, "B", 9.5)
+    p.set_text_color(15, 23, 42)
+    p.cell(0, 5, txt("II. DAİRE / BİRİMLER BAZINDA DONANIM DAĞILIMI (ÖNE ÇIKAN BİRİMLER)"), ln=1)
+
+    unit_map = {}
+    zimmetli_items = [x for x in items if x.status == "Zimmetli"]
+    for it in zimmetli_items:
+        u = (it.assigned_unit or "Belirtilmemiş").strip()
+        c = (it.category or "Diğer").strip()
+        if u not in unit_map:
+            unit_map[u] = {"Kasa": 0, "Monitör": 0, "Yazıcı": 0, "Tarayıcı": 0, "Total": 0}
+        if c in unit_map[u]:
+            unit_map[u][c] += 1
+        unit_map[u]["Total"] += 1
+
+    sorted_units = sorted(unit_map.items(), key=lambda x: x[1]["Total"], reverse=True)[:6]
+
+    p.set_font(font, "B", 8)
+    p.set_fill_color(30, 41, 59)
+    p.set_text_color(255, 255, 255)
+    p.cell(65, 6, txt("Daire / Birim Adı"), 1, 0, "C", fill=True)
+    p.cell(25, 6, txt("Kasa"), 1, 0, "C", fill=True)
+    p.cell(25, 6, txt("Monitör"), 1, 0, "C", fill=True)
+    p.cell(25, 6, txt("Yazıcı"), 1, 0, "C", fill=True)
+    p.cell(25, 6, txt("Tarayıcı"), 1, 0, "C", fill=True)
+    p.cell(25, 6, txt("Toplam Zimmet"), 1, 1, "C", fill=True)
+
+    p.set_font(font, "", 8)
+    p.set_text_color(15, 23, 42)
+    if not sorted_units:
+        p.cell(190, 5.5, txt("Kayıtlı zimmetli daire verisi bulunamadı."), 1, 1, "C")
+    else:
+        for idx, (uname, udata) in enumerate(sorted_units, 1):
+            fill = idx % 2 == 0
+            p.set_fill_color(248, 250, 252) if fill else p.set_fill_color(255, 255, 255)
+            p.cell(65, 5.5, clip_text(p, txt(uname), 63), 1, 0, "L", fill=fill)
+            p.cell(25, 5.5, str(udata["Kasa"]), 1, 0, "C", fill=fill)
+            p.cell(25, 5.5, str(udata["Monitör"]), 1, 0, "C", fill=fill)
+            p.cell(25, 5.5, str(udata["Yazıcı"]), 1, 0, "C", fill=fill)
+            p.cell(25, 5.5, str(udata["Tarayıcı"]), 1, 0, "C", fill=fill)
+            p.cell(25, 5.5, str(udata["Total"]), 1, 1, "C", fill=fill)
+
+    p.ln(4)
+
+    p.set_font(font, "B", 9.5)
+    p.set_text_color(15, 23, 42)
+    p.cell(0, 5, txt("III. GENEL DEĞERLENDİRME VE SONUÇ"), ln=1)
+
+    p.set_font(font, "", 8)
+    p.set_text_color(51, 65, 85)
+    eval_text = (
+        f"Diyarbakır Bölge Adliye Mahkemesi Bilgi İşlem Müdürlüğü bünyesinde toplam {cnt_total} adet donanım "
+        f"cihazı kayıt altındadır. Donanımların %{pct_zimmet:.1f}'i ({cnt_zimmet} adet) mahkeme daireleri ve birimlerde "
+        f"faal olarak kullanılmakta, %{pct_depo:.1f}'i ({cnt_depo} adet) yedek donanım olarak depoda hazır bulundurulmaktadır. "
+        f"Ekonomik ömrünü tamamlayan veya arızalı durumda bulunan {cnt_hurda} adet cihaz (%{pct_hurda:.1f}) ise Taşınır Mal "
+        f"Yönetmeliği kapsamında Hek/Hurda statüsüne ayrılmıştır. Sistem donanım varlığı sürdürülebilir ve tam denetlenebilir durumdadır."
+    )
+    p.multi_cell(0, 4, txt(eval_text))
+
+    p.ln(5)
+
+    p.set_font(font, "B", 8.5)
+    p.set_text_color(15, 23, 42)
+
+    col_w = 58
+    curr_y = p.get_y()
+
+    p.set_xy(10, curr_y)
+    p.cell(col_w, 4, txt("Hazırlayan"), 0, 1, "C")
+    p.set_xy(10, curr_y + 4)
+    p.set_font(font, "", 8)
+    p.cell(col_w, 4, txt("Bilgi İşlem Şefi"), 0, 1, "C")
+    p.set_xy(10, curr_y + 8)
+    p.set_font(font, "B", 8)
+    p.cell(col_w, 4, txt("Ahmet AYDIN (187696)"), 0, 1, "C")
+
+    p.set_xy(76, curr_y)
+    p.set_font(font, "B", 8.5)
+    p.cell(col_w, 4, txt("İnceleyen"), 0, 1, "C")
+    p.set_xy(76, curr_y + 4)
+    p.set_font(font, "", 8)
+    p.cell(col_w, 4, txt("Bilgi İşlem Müdürü"), 0, 1, "C")
+    p.set_xy(76, curr_y + 8)
+    p.set_font(font, "B", 8)
+    p.cell(col_w, 4, txt("Murat İRVEN (187665)"), 0, 1, "C")
+
+    p.set_xy(142, curr_y)
+    p.set_font(font, "B", 8.5)
+    p.cell(col_w, 4, txt("Onaylayan"), 0, 1, "C")
+    p.set_xy(142, curr_y + 4)
+    p.set_font(font, "", 8)
+    p.cell(col_w, 4, txt("BAM / Komisyon Başkanı"), 0, 1, "C")
+    p.set_xy(142, curr_y + 8)
+    p.set_font(font, "B", 8)
+    p.cell(col_w, 4, txt("Adalet Komisyonu"), 0, 1, "C")
+
+    out = p.output(dest="S")
+    return out if isinstance(out, (bytes, bytearray)) else out.encode("latin-1", errors="ignore")
+
+
 def purge_dirty_concat_records():
     try:
         # DB'de kayıtlı kirli/birleşik isim kullanıcılarını temizle
@@ -2695,7 +2919,10 @@ def dashboard():
           <h4 class="mb-0 fw-bold" style="letter-spacing: -0.5px;">Hoş geldiniz, {session.get('user')}</h4>
           <div class="label mt-1" style="color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Diyarbakır Bölge Adliye Mahkemesi Bilgi İşlem Müdürlüğü Envanter Paneli</div>
         </div>
-        <button type="button" onclick="window.location.reload()" class="btn btn-sm btn-outline-warning ms-auto fw-bold"><i class="fa fa-rotate-right me-1"></i> Sayfayı Yenile</button>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <a href="/admin/export/yonetici_ozet.pdf" target="_blank" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm" style="border-radius: 10px;"><i class="fa-solid fa-crown me-1"></i> BAM Yönetici Özet Raporu (PDF) İndir</a>
+          <button type="button" onclick="window.location.reload()" class="btn btn-sm btn-outline-warning fw-bold"><i class="fa fa-rotate-right me-1"></i> Yenile</button>
+        </div>
       </div>
     </div>
 
@@ -4963,6 +5190,16 @@ def ayarlar_page():
               <a class="btn btn-outline-primary fw-bold" href="/admin/export/depo.pdf" target="_blank"><i class="fa fa-file-pdf me-1"></i> PDF Raporu</a>
             </div>
           </div>
+        <div class="col-12">
+          <div class="card p-3" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <h6 class="mb-1 text-warning fw-bold"><i class="fa-solid fa-crown me-2"></i>BAM Başkanlığı & Komisyon İçin "Yönetici Özet Raporu" (PDF)</h6>
+                <div class="label" style="font-size: 11.5px;">BAM Başkanlığı ve Adalet Komisyonu sunumları için tüm varlık, oran ve imza alanlarını içeren resmi 1 sayfalık kurul özet raporu.</div>
+              </div>
+              <a class="btn btn-warning text-dark fw-bold shadow-sm" href="/admin/export/yonetici_ozet.pdf" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i> Yönetici Özet Raporu İndir (PDF)</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -5712,6 +5949,20 @@ def admin_export_hek_tutanak_pdf():
         buf = io.BytesIO(pdf)
         buf.seek(0)
         download_name = f"hek_hurda_tutanagi_{today_str()}.pdf" if not raw_ids else f"secilen_hek_tutanagi_{today_str()}.pdf"
+        return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=download_name)
+    except Exception as e:
+        return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
+
+
+@app.route("/admin/export/yonetici_ozet.pdf")
+def admin_export_yonetici_ozet_pdf():
+    if not require_login():
+        return redirect(url_for("login"))
+    try:
+        pdf = build_yonetici_ozet_pdf()
+        buf = io.BytesIO(pdf)
+        buf.seek(0)
+        download_name = f"bam_yonetici_ozet_raporu_{today_str()}.pdf"
         return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=download_name)
     except Exception as e:
         return render_template_string(BASE_HTML, content=f"<div class='card p-4'><h5>Dışa Aktarma Hatası</h5><pre>{traceback.format_exc()}</pre></div>", message=str(e), is_admin=is_admin())
